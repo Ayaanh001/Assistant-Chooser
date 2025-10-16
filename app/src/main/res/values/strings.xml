@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Assistant Chooser</string>
+    <string name="open_settings">Open Default Assistant Settings</string>
+    <string name="choose_assistant">Choose Assistant App</string>
+</resources>
