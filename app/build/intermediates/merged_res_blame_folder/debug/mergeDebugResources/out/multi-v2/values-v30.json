@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.hussain.assistantchooser.app-mergeDebugResources-43:/values-v30/values-v30.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\1ca9cebcfeb8c35cbeb7a9093f09ed8d\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "72",
+                        "endOffsets": "123"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,4 @@
+#Sun Aug 24 19:46:20 IST 2025
+base.0=C\:\\Users\\Lenovo\\StudioProjects\\AssistantChooserApp\\app\\build\\intermediates\\dex\\debugAndroidTest\\mergeProjectDexDebugAndroidTest\\0\\classes.dex
+path.0=0/classes.dex
+renamed.0=classes.dex
