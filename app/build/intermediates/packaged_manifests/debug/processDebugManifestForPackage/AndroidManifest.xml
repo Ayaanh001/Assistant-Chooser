@@ -13,6 +13,9 @@
             <action android:name="android.intent.action.ASSIST" />
         </intent>
         <intent>
+            <action android:name="android.intent.action.VOICE_COMMAND" />
+        </intent>
+        <intent>
             <action android:name="android.service.voice.VoiceInteractionService" />
         </intent>
         <intent>
@@ -61,6 +64,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity android:name="com.hussain.assistantchooser.SettingsActivity" />
 
         <service
             android:name="com.hussain.assistantchooser.QuickLaunchTileService"

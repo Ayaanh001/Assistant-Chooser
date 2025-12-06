@@ -4,7 +4,7 @@
             "outputFile": "com.hussain.assistantchooser.app-mergeDebugResources-43:/values-uz/values-uz.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\9cf9c643dea8ebb804538bf2a0c43514\\transformed\\ui-release\\res\\values-uz\\values-uz.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\9cf9c643dea8ebb804538bf2a0c43514\\transformed\\ui-release\\res\\values-uz\\values-uz.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\1ca9cebcfeb8c35cbeb7a9093f09ed8d\\transformed\\material3-release\\res\\values-uz\\values-uz.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\1ca9cebcfeb8c35cbeb7a9093f09ed8d\\transformed\\material3-release\\res\\values-uz\\values-uz.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -38,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\eadde06572147c4d03a9afaf6a9d91fe\\transformed\\foundation-release\\res\\values-uz\\values-uz.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\eadde06572147c4d03a9afaf6a9d91fe\\transformed\\foundation-release\\res\\values-uz\\values-uz.xml",
                     "from": {
                         "startLines": "2,3",
                         "startColumns": "4,4",
@@ -55,7 +55,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\5c718dbd2e63ba2688e48472d9bcafc7\\transformed\\core-1.13.1\\res\\values-uz\\values-uz.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\5c718dbd2e63ba2688e48472d9bcafc7\\transformed\\core-1.13.1\\res\\values-uz\\values-uz.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",

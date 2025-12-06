@@ -4,7 +4,24 @@
             "outputFile": "com.hussain.assistantchooser.app-mergeDebugResources-43:/values-de/values-de.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\1ca9cebcfeb8c35cbeb7a9093f09ed8d\\transformed\\material3-release\\res\\values-de\\values-de.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\5c718dbd2e63ba2688e48472d9bcafc7\\transformed\\core-1.13.1\\res\\values-de\\values-de.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,153,255,355,455,563,668,786",
+                        "endColumns": "97,101,99,99,107,104,117,100",
+                        "endOffsets": "148,250,350,450,558,663,781,882"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,81",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,203,305,405,505,613,718,8493",
+                        "endColumns": "97,101,99,99,107,104,117,100",
+                        "endOffsets": "198,300,400,500,608,713,831,8589"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\1ca9cebcfeb8c35cbeb7a9093f09ed8d\\transformed\\material3-release\\res\\values-de\\values-de.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -21,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\9cf9c643dea8ebb804538bf2a0c43514\\transformed\\ui-release\\res\\values-de\\values-de.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\9cf9c643dea8ebb804538bf2a0c43514\\transformed\\ui-release\\res\\values-de\\values-de.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -38,7 +55,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\eadde06572147c4d03a9afaf6a9d91fe\\transformed\\foundation-release\\res\\values-de\\values-de.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\eadde06572147c4d03a9afaf6a9d91fe\\transformed\\foundation-release\\res\\values-de\\values-de.xml",
                     "from": {
                         "startLines": "2,3",
                         "startColumns": "4,4",
@@ -52,23 +69,6 @@
                         "startOffsets": "8859,8946",
                         "endColumns": "86,89",
                         "endOffsets": "8941,9031"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\5c718dbd2e63ba2688e48472d9bcafc7\\transformed\\core-1.13.1\\res\\values-de\\values-de.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,153,255,355,455,563,668,786",
-                        "endColumns": "97,101,99,99,107,104,117,100",
-                        "endOffsets": "148,250,350,450,558,663,781,882"
-                    },
-                    "to": {
-                        "startLines": "2,3,4,5,6,7,8,81",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,203,305,405,505,613,718,8493",
-                        "endColumns": "97,101,99,99,107,104,117,100",
-                        "endOffsets": "198,300,400,500,608,713,831,8589"
                     }
                 }
             ]
