@@ -6,6 +6,9 @@
             <action android:name="android.intent.action.ASSIST" />
         </intent>
         <intent>
+            <action android:name="android.intent.action.VOICE_COMMAND" />
+        </intent>
+        <intent>
             <action android:name="android.service.voice.VoiceInteractionService" />
         </intent>
         <intent>
@@ -13,6 +16,9 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
+
+
+
 
     <application
         android:allowBackup="true"
@@ -43,6 +49,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".SettingsActivity" />
+
         <service
             android:name=".QuickLaunchTileService"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
@@ -51,7 +59,5 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
-
-
     </application>
 </manifest>

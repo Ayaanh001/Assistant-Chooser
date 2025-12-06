@@ -4,41 +4,7 @@
             "outputFile": "com.hussain.assistantchooser.app-mergeDebugResources-43:/values-fi/values-fi.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\5c718dbd2e63ba2688e48472d9bcafc7\\transformed\\core-1.13.1\\res\\values-fi\\values-fi.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,151,253,351,456,561,673,789",
-                        "endColumns": "95,101,97,104,104,111,115,100",
-                        "endOffsets": "146,248,346,451,556,668,784,885"
-                    },
-                    "to": {
-                        "startLines": "2,3,4,5,6,7,8,81",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,201,303,401,506,611,723,8376",
-                        "endColumns": "95,101,97,104,104,111,115,100",
-                        "endOffsets": "196,298,396,501,606,718,834,8472"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\eadde06572147c4d03a9afaf6a9d91fe\\transformed\\foundation-release\\res\\values-fi\\values-fi.xml",
-                    "from": {
-                        "startLines": "2,3",
-                        "startColumns": "4,4",
-                        "startOffsets": "55,145",
-                        "endColumns": "89,89",
-                        "endOffsets": "140,230"
-                    },
-                    "to": {
-                        "startLines": "85,86",
-                        "startColumns": "4,4",
-                        "startOffsets": "8748,8838",
-                        "endColumns": "89,89",
-                        "endOffsets": "8833,8923"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\1ca9cebcfeb8c35cbeb7a9093f09ed8d\\transformed\\material3-release\\res\\values-fi\\values-fi.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\1ca9cebcfeb8c35cbeb7a9093f09ed8d\\transformed\\material3-release\\res\\values-fi\\values-fi.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -55,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\9cf9c643dea8ebb804538bf2a0c43514\\transformed\\ui-release\\res\\values-fi\\values-fi.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\9cf9c643dea8ebb804538bf2a0c43514\\transformed\\ui-release\\res\\values-fi\\values-fi.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -69,6 +35,40 @@
                         "startOffsets": "839,933,1018,1117,1218,1307,1384,7738,7829,7911,7992,8074,8146,8222,8302,8477,8554,8626",
                         "endColumns": "93,84,98,100,88,76,92,90,81,80,81,71,75,79,73,76,71,121",
                         "endOffsets": "928,1013,1112,1213,1302,1379,1472,7824,7906,7987,8069,8141,8217,8297,8371,8549,8621,8743"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\eadde06572147c4d03a9afaf6a9d91fe\\transformed\\foundation-release\\res\\values-fi\\values-fi.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,145",
+                        "endColumns": "89,89",
+                        "endOffsets": "140,230"
+                    },
+                    "to": {
+                        "startLines": "85,86",
+                        "startColumns": "4,4",
+                        "startOffsets": "8748,8838",
+                        "endColumns": "89,89",
+                        "endOffsets": "8833,8923"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\5c718dbd2e63ba2688e48472d9bcafc7\\transformed\\core-1.13.1\\res\\values-fi\\values-fi.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,151,253,351,456,561,673,789",
+                        "endColumns": "95,101,97,104,104,111,115,100",
+                        "endOffsets": "146,248,346,451,556,668,784,885"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,81",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,201,303,401,506,611,723,8376",
+                        "endColumns": "95,101,97,104,104,111,115,100",
+                        "endOffsets": "196,298,396,501,606,718,834,8472"
                     }
                 }
             ]

@@ -1,4 +1,4 @@
-com.hussain.assistantchooser.test.app-androidTest-0 C:\Users\Lenovo\StudioProjects\AssistantChooserApp\app\build\generated\res\resValues\androidTest\debug
-com.hussain.assistantchooser.test.app-mergeDebugAndroidTestResources-1 C:\Users\Lenovo\StudioProjects\AssistantChooserApp\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
-com.hussain.assistantchooser.test.app-mergeDebugAndroidTestResources-2 C:\Users\Lenovo\StudioProjects\AssistantChooserApp\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
-com.hussain.assistantchooser.test.app-debugAndroidTest-3 C:\Users\Lenovo\StudioProjects\AssistantChooserApp\app\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources
+com.hussain.assistantchooser.test.app-androidTest-0 C:\Users\sohai\StudioProjects\Assistant-Chooser\app\build\generated\res\resValues\androidTest\debug
+com.hussain.assistantchooser.test.app-mergeDebugAndroidTestResources-1 C:\Users\sohai\StudioProjects\Assistant-Chooser\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
+com.hussain.assistantchooser.test.app-mergeDebugAndroidTestResources-2 C:\Users\sohai\StudioProjects\Assistant-Chooser\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
+com.hussain.assistantchooser.test.app-debugAndroidTest-3 C:\Users\sohai\StudioProjects\Assistant-Chooser\app\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources

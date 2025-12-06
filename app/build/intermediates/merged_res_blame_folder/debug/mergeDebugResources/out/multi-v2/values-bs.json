@@ -4,24 +4,24 @@
             "outputFile": "com.hussain.assistantchooser.app-mergeDebugResources-43:/values-bs/values-bs.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\eadde06572147c4d03a9afaf6a9d91fe\\transformed\\foundation-release\\res\\values-bs\\values-bs.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\5c718dbd2e63ba2688e48472d9bcafc7\\transformed\\core-1.13.1\\res\\values-bs\\values-bs.xml",
                     "from": {
-                        "startLines": "2,3",
-                        "startColumns": "4,4",
-                        "startOffsets": "55,145",
-                        "endColumns": "89,91",
-                        "endOffsets": "140,232"
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,153,255,353,457,561,663,780",
+                        "endColumns": "97,101,97,103,103,101,116,100",
+                        "endOffsets": "148,250,348,452,556,658,775,876"
                     },
                     "to": {
-                        "startLines": "85,86",
-                        "startColumns": "4,4",
-                        "startOffsets": "8828,8918",
-                        "endColumns": "89,91",
-                        "endOffsets": "8913,9005"
+                        "startLines": "2,3,4,5,6,7,8,81",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,203,305,403,507,611,713,8459",
+                        "endColumns": "97,101,97,103,103,101,116,100",
+                        "endOffsets": "198,300,398,502,606,708,825,8555"
                     }
                 },
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\9cf9c643dea8ebb804538bf2a0c43514\\transformed\\ui-release\\res\\values-bs\\values-bs.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\9cf9c643dea8ebb804538bf2a0c43514\\transformed\\ui-release\\res\\values-bs\\values-bs.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -38,7 +38,24 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\1ca9cebcfeb8c35cbeb7a9093f09ed8d\\transformed\\material3-release\\res\\values-bs\\values-bs.xml",
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\eadde06572147c4d03a9afaf6a9d91fe\\transformed\\foundation-release\\res\\values-bs\\values-bs.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,145",
+                        "endColumns": "89,91",
+                        "endOffsets": "140,232"
+                    },
+                    "to": {
+                        "startLines": "85,86",
+                        "startColumns": "4,4",
+                        "startOffsets": "8828,8918",
+                        "endColumns": "89,91",
+                        "endOffsets": "8913,9005"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\sohai\\.gradle\\caches\\9.0-milestone-1\\transforms\\1ca9cebcfeb8c35cbeb7a9093f09ed8d\\transformed\\material3-release\\res\\values-bs\\values-bs.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -52,23 +69,6 @@
                         "startOffsets": "1467,1586,1706,1827,1947,2046,2144,2259,2404,2524,2662,2747,2847,2940,3038,3155,3282,3387,3522,3656,3797,3967,4102,4225,4352,4480,4574,4672,4793,4921,5018,5121,5230,5369,5514,5623,5723,5808,5901,5996,6123,6217,6308,6417,6505,6588,6685,6789,6882,6979,7067,7175,7272,7374,7512,7602,7710",
                         "endColumns": "118,119,120,119,98,97,114,144,119,137,84,99,92,97,116,126,104,134,133,140,169,134,122,126,127,93,97,120,127,96,102,108,138,144,108,99,84,92,94,126,93,90,108,87,82,96,103,92,96,87,107,96,101,137,89,107,98",
                         "endOffsets": "1581,1701,1822,1942,2041,2139,2254,2399,2519,2657,2742,2842,2935,3033,3150,3277,3382,3517,3651,3792,3962,4097,4220,4347,4475,4569,4667,4788,4916,5013,5116,5225,5364,5509,5618,5718,5803,5896,5991,6118,6212,6303,6412,6500,6583,6680,6784,6877,6974,7062,7170,7267,7369,7507,7597,7705,7804"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\Lenovo\\.gradle\\caches\\9.0-milestone-1\\transforms\\5c718dbd2e63ba2688e48472d9bcafc7\\transformed\\core-1.13.1\\res\\values-bs\\values-bs.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,153,255,353,457,561,663,780",
-                        "endColumns": "97,101,97,103,103,101,116,100",
-                        "endOffsets": "148,250,348,452,556,658,775,876"
-                    },
-                    "to": {
-                        "startLines": "2,3,4,5,6,7,8,81",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,203,305,403,507,611,713,8459",
-                        "endColumns": "97,101,97,103,103,101,116,100",
-                        "endOffsets": "198,300,398,502,606,708,825,8555"
                     }
                 }
             ]
