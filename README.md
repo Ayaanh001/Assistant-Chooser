@@ -1,4 +1,4 @@
-# Assistant Chooser
+# Assistant Chooser 📱 
 
 <p align="center">
   <img src="assets/icon.png" alt="App Icon" width="128"/>
@@ -19,13 +19,11 @@
     </a>
 </p>
 
-# 📱 Assistant Chooser
 
 **Assistant Chooser** is an Android application that allows users to easily set and manage their **default assistant app**.  
 You can view, launch, and switch between all available assistants directly from the app.
 
 It also provides **quick shortcuts** and **Quick Settings tiles** for faster access to assistant-related actions.
----
 
 ## 🚀 Features
 
@@ -35,11 +33,8 @@ It also provides **quick shortcuts** and **Quick Settings tiles** for faster acc
 - 🤖 Access all AI apps with voice assistants from one place
 - ⚡ **Quick Settings Tile** for faster access
 - 📱 Supports **Android App Shortcuts**
-- 🎨 **Material You (Material 3) themed UI**
-   - Dynamic color support
+- 🎨 **Material You (Material 3) themed UI** with Dynamic color support
 - 🧼 Clean and simple UI for easy navigation
-
----
 
 ## 🛠️ Tech Stack & Architecture
 
