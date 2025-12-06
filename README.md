@@ -1,13 +1,13 @@
 # Assistant Chooser 📱 
 
+**Set, switch, and use all your assistants apps from one place.**
 <p align="center">
   <img src="assets/icon.png" alt="App Icon" width="128"/>
 </p>
 
 <p align="center">
-  <img src="assets/screenshot1.jpg" alt="Screenshot 1" width="200" style="border-radius:26px;"/>
-  <img src="assets/screenshot2.jpg" alt="Screenshot 2" width="200" style="border-radius:26px;"/>
-  <img src="assets/screenshot3.jpg" alt="Screenshot 3" width="200" style="border-radius:26px;"/>
+  <img src="assets/screenshot.png" alt="Screenshot" width="200" style="border-radius:26px;"/>
+  
 </p>
 
 <p align="center">
