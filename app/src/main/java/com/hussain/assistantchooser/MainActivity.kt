@@ -61,8 +61,8 @@ class MainActivity : ComponentActivity() {
 
         // load initial preferences
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        openAppState.value = prefs.getBoolean(KEY_OPEN_APP, true)
-        closeAfterLaunchState.value = prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, false)
+        openAppState.value = prefs.getBoolean(KEY_OPEN_APP, false)
+        closeAfterLaunchState.value = prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)
 
         val pm = packageManager
 
@@ -180,8 +180,8 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // reload settings in case user changed them in SettingsActivity
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        openAppState.value = prefs.getBoolean(KEY_OPEN_APP, true)
-        closeAfterLaunchState.value = prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, false)
+        openAppState.value = prefs.getBoolean(KEY_OPEN_APP, false)
+        closeAfterLaunchState.value = prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)
     }
 
     private fun requestAddQuickSettingsTile() {
