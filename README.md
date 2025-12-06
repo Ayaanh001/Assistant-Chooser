@@ -35,6 +35,8 @@ It also provides **quick shortcuts** and **Quick Settings tiles** for faster acc
 - 🤖 Access all AI apps with voice assistants from one place
 - ⚡ **Quick Settings Tile** for faster access
 - 📱 Supports **Android App Shortcuts**
+- 🎨 **Material You (Material 3) themed UI**
+   - Dynamic color support
 - 🧼 Clean and simple UI for easy navigation
 
 ---
