@@ -1,6 +1,6 @@
 # Assistant Chooser 📱 
 
-**Set, switch, and use all your assistants apps from one place.**
+**Set, switch default assistant faster and use all your assistant apps from one place.**
 <p align="center">
   <img src="assets/icon.png" alt="App Icon" width="128"/>
 </p>
@@ -20,8 +20,8 @@
 </p>
 
 
-**Assistant Chooser** is an Android application that allows users to easily set and manage their **default assistant app**.  
-You can view, launch, and switch between all available assistants directly from the app.
+**Assistant Chooser** is an Android application that allows users to easily set and manage their **default assistant app faster & easier**.  
+You can view, launch, and switch between all available assistants or searching apps like Launchpad Search, SpotLight Search directly from the app.
 
 It also provides **quick shortcuts** and **Quick Settings tiles** for faster access to assistant-related actions.
 
@@ -61,6 +61,7 @@ To get a local copy up and running, follow these simple steps.
 3. Let Gradle sync and download the required dependencies.
 4. Run the app on an emulator or a physical device.
 
+
 ## 📂 Project Structure
 
 The project follows the standard Android app structure, with a few key directories:
@@ -81,3 +82,27 @@ Assistant-Chooser/
 
 
 ```
+
+## ⚠️ Known Issues
+
+The **Issue: Google app does not launch Gemini Assistant**
+When tapping the **Google app**, some devices do **not** open the **Gemini Assistant** as expected.
+
+✅ **Cause**
+Android requires **Google** to be set as the default digital assistant in order for the Gemini Assistant to launch correctly.
+
+✅ **Solution / Workaround (Recommended if you want to use Gemini Assistant)**
+1. Set **Google** as your **default digital assistant** in system settings.
+2. Open **Assistant Chooser** using the **Quick Settings Tile**:
+- you can Add Assistant Chooser via “Add Tile” option in app or 
+- Add from the Quick Settings panel
+- Use this tile to launch or switch assistants
+
+This method allows you to keep Google as the system assistant so that Gemini launches properly, while still giving you quick access to Assistant Chooser.
+
+ℹ️ **Alternative Behavior**
+
+If you **do not need Gemini Assistant**, you can instead set **Assistant Chooser** as the **default assistant**.
+In this mode:
+Clicking the **Google** app will open **Google’s voice search**, not Gemini
+Assistant switching inside the app continues to work normally
