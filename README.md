@@ -20,7 +20,7 @@
 </p>
 
 
-**Assistant Chooser** allows users to easily set and manage their **default assistant app or You can view, launch, and switch between all available assistants or search apps like [Launchpad Search](https://github.com/Ayaanh001/launchpad-search)
+**Assistant Chooser** allows users to easily set and manage their **default assistant app** or You can view, launch, and switch between all available assistants or search apps like [Launchpad Search](https://github.com/Ayaanh001/launchpad-search)
 [SpotLight Search](https://github.com/Ayaanh001/SpotlightSearch)   directly from the app.
 
 It also provides **quick shortcuts** and **Quick Settings tiles** for faster access to assistant-related actions.
