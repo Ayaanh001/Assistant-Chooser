@@ -278,7 +278,7 @@ fun SettingsScreen(
 
                     ClickableTile(
                         title = "Version",
-                        subtitle = "1.0",
+                        subtitle = "1.1",
                         onClick = { /* maybe show changelog later */ },
                         shape = bottomShape
                     )
