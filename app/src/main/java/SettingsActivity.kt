@@ -1,7 +1,11 @@
 package com.hussain.assistantchooser
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
@@ -41,9 +45,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import com.hussain.assistantchooser.ui.theme.AssistantChooserTheme
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.SideEffect
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 
 class SettingsActivity : ComponentActivity() {
@@ -101,6 +109,19 @@ data class SettingItem(
     val checked: Boolean
 )
 
+// Helper function to trigger vibration
+fun performHapticFeedback(context: Context) {
+    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+    vibrator?.let {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            it.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            it.vibrate(50)
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -110,23 +131,12 @@ fun SettingsScreen(
     onToggleCloseAfter: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     var openApp by remember { mutableStateOf(initialOpenApp) }
     var closeAfter by remember { mutableStateOf(initialCloseAfter) }
 
-    val settings = listOf(
-        SettingItem(
-            id = "open_app",
-            title = "Open App",
-            subtitle = "Clicking on App name will open app instead of voice Assistant",
-            checked = openApp
-        ),
-        SettingItem(
-            id = "close_after",
-            title = "Close app after activity launch",
-            subtitle = "App will get close after launching an app",
-            checked = closeAfter
-        )
-    )
+    // Appearance
+    var selectedTheme by remember { mutableStateOf("System default") }
 
     Scaffold(
         topBar = {
@@ -158,59 +168,119 @@ fun SettingsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                itemsIndexed(settings) { index, item ->
-                    val shape = when {
-                        settings.size == 1 -> RoundedCornerShape(24.dp)
-                        index == 0 -> RoundedCornerShape(
-                            topStart = 24.dp, topEnd = 24.dp,
-                            bottomStart = 8.dp, bottomEnd = 8.dp
-                        )
-                        index == settings.size - 1 -> RoundedCornerShape(
-                            topStart = 8.dp, topEnd = 8.dp,
-                            bottomStart = 24.dp, bottomEnd = 24.dp
-                        )
-                        else -> RoundedCornerShape(8.dp)
-                    }
 
-                    val checked = when (item.id) {
-                        "open_app" -> openApp
-                        "close_after" -> closeAfter
-                        else -> item.checked
-                    }
+            // SHORTCUTS
+            item {
+                Text(
+                    text = "Shortcuts",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start=16.dp,bottom = 4.dp)
+                )
 
-                    val onToggle: (Boolean) -> Unit = when (item.id) {
-                        "open_app" -> {
-                            { enabled ->
-                                openApp = enabled
-                                onToggleOpenApp(enabled)
-                            }
-                        }
-                        "close_after" -> {
-                            { enabled ->
-                                closeAfter = enabled
-                                onToggleCloseAfter(enabled)
-                            }
-                        }
-                        else -> { _ -> }
-                    }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    SettingTile(
+                        title = "Open App",
+                        subtitle = "Clicking on app name opens the app instead of voice assistant",
+                        checked = openApp,
+                        onCheckedChange = { enabled ->
+                            performHapticFeedback(context)
+                            openApp = enabled
+                            onToggleOpenApp(enabled)
+                        },
+                        shape = RoundedCornerShape(
+                            topStart = 24.dp,
+                            topEnd = 24.dp,
+                            bottomStart = 8.dp,
+                            bottomEnd = 8.dp
+                        )
+                    )
 
                     SettingTile(
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        checked = checked,
-                        onCheckedChange = onToggle,
-                        shape = shape
+                        title = "Close app after activity launch",
+                        subtitle = "Close AssistantChooser after launching another app",
+                        checked = closeAfter,
+                        onCheckedChange = { enabled ->
+                            performHapticFeedback(context)
+                            closeAfter = enabled
+                            onToggleCloseAfter(enabled)
+                        },
+                        shape = RoundedCornerShape(
+                            topStart = 8.dp,
+                            topEnd = 8.dp,
+                            bottomStart = 24.dp,
+                            bottomEnd = 24.dp
+                        )
+                    )
+                }
+            }
+
+            // ABOUT
+            item {
+                Text(
+                    text = "About",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start=16.dp, bottom = 4.dp)
+                )
+
+                val topShape = RoundedCornerShape(
+                    topStart = 24.dp,
+                    topEnd = 24.dp,
+                    bottomStart = 8.dp,
+                    bottomEnd = 8.dp
+                )
+                val middleShape = RoundedCornerShape(8.dp)
+                val bottomShape = RoundedCornerShape(
+                    topStart = 8.dp,
+                    topEnd = 8.dp,
+                    bottomStart = 24.dp,
+                    bottomEnd = 24.dp
+                )
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    ClickableTile(
+                        title = "Developer",
+                        subtitle = "Ayaan Hussain",
+                        onClick = {
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
+                                android.net.Uri.parse("https://github.com/Ayaanh001")
+                            )
+                            context.startActivity(intent)
+                        },
+                        shape = topShape
+                    )
+
+                    ClickableTile(
+                        title = "GitHub repository",
+                        subtitle = "View the source code on GitHub",
+                        onClick = {
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://github.com/Ayaanh001/Assistant-Chooser.git")
+                            )
+                            context.startActivity(intent)
+                        },
+                        shape = middleShape
+                    )
+
+                    ClickableTile(
+                        title = "Version",
+                        subtitle = "1.0",
+                        onClick = { /* maybe show changelog later */ },
+                        shape = bottomShape
                     )
                 }
             }
@@ -227,7 +297,8 @@ fun SettingTile(
     shape: RoundedCornerShape
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth(),
         shape = shape,
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 3.dp
@@ -240,13 +311,11 @@ fun SettingTile(
                 .padding(16.dp)
         ) {
             Column(modifier = Modifier.weight(1f)) {
-
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
@@ -266,6 +335,113 @@ fun SettingTile(
                     )
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun ClickableTile(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    shape: RoundedCornerShape
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth(),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 3.dp
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onClick() }
+                .padding(16.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ListPreferenceTile(
+    title: String,
+    subtitle: String,
+    currentValue: String,
+    options: List<String>,
+    onOptionSelected: (String) -> Unit,
+    shape: RoundedCornerShape
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 3.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = true }
+                .padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                    Text(
+                        text = currentValue,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Expand",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onOptionSelected(option)
+                            expanded = false
+                        }
+                    )
+                }
+            }
         }
     }
 }
