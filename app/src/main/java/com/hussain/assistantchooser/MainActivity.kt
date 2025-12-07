@@ -18,6 +18,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -34,11 +35,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.hussain.assistantchooser.ui.theme.AssistantChooserTheme
@@ -250,19 +253,55 @@ class MainActivity : ComponentActivity() {
 
     private fun launchAssistantForPackage(context: android.content.Context, pm: PackageManager, pkg: String) {
         try {
-            // 1. Google / Gemini Override
+            // 1. Google Assistant Override
             if (pkg == "com.google.android.googlequicksearchbox") {
-                val intent = Intent(Intent.ACTION_VOICE_COMMAND).apply {
-                    setPackage(pkg)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                // Try multiple methods for Google Assistant
+                val methods = listOf(
+                    // Method 1: Direct assistant launch via search action
+                    Intent("android.intent.action.VOICE_ASSIST").apply {
+                        setPackage(pkg)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    },
+                    // Method 2: Google app search with voice
+                    Intent(Intent.ACTION_SEARCH).apply {
+                        setPackage(pkg)
+                        putExtra("com.google.android.googlequicksearchbox.EXTRA_VOICE_SEARCH", true)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    },
+                    // Method 3: Voice command
+                    Intent(Intent.ACTION_VOICE_COMMAND).apply {
+                        setPackage(pkg)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    },
+                    // Method 4: Direct component launch to VoiceSearchActivity
+                    Intent().apply {
+                        component = ComponentName(
+                            pkg,
+                            "com.google.android.voicesearch.VoiceSearchActivity"
+                        )
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    },
+                    // Method 5: Assistant settings intent
+                    Intent("com.google.android.googlequicksearchbox.GOOGLE_ASSISTANT").apply {
+                        setPackage(pkg)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                )
+
+                for (intent in methods) {
+                    try {
+                        context.startActivity(intent)
+                        Log.d("MainActivity", "Successfully launched Google Assistant")
+                        return
+                    } catch (e: ActivityNotFoundException) {
+                        Log.d("MainActivity", "Method failed, trying next...")
+                        continue
+                    }
                 }
-                try {
-                    context.startActivity(intent)
-                    Log.d("MainActivity", "Forced ACTION_VOICE_COMMAND for Google")
-                    return
-                } catch (e: Exception) {
-                    Log.w("MainActivity", "Force launch failed for Google, falling back...")
-                }
+
+                // If all methods fail, show error
+                Toast.makeText(context, "Google Assistant not available. Please ensure it's enabled in system settings.", Toast.LENGTH_LONG).show()
+                return
             }
 
             // 2. ChatGPT Override
@@ -365,7 +404,13 @@ fun AssistantChooserScreen(
 
                         DropdownMenu(
                             expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false }
+                            onDismissRequest = { menuExpanded = false },
+                            modifier = Modifier
+                                .widthIn(min = 150.dp)
+                                .offset(x = (4).dp), // Shift left to align better
+                            shape = RoundedCornerShape(16.dp),
+                            tonalElevation = 3.dp,
+                            shadowElevation = 8.dp
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Add Tile") },
@@ -377,6 +422,14 @@ fun AssistantChooserScreen(
                                     Icon(Icons.Default.Add, contentDescription = "Add")
                                 }
                             )
+
+                            // Separator line
+                            HorizontalDivider(
+                                modifier = Modifier.padding(start = 48.dp, end = 16.dp),
+                                thickness = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
+
                             DropdownMenuItem(
                                 text = { Text("Settings") },
                                 onClick = {
