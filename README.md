@@ -1,4 +1,4 @@
-# Assistant Chooser 📱 
+# Assistant Chooser  
 
 **Set, switch default assistant faster and use all your assistant apps from one place.**
 <p align="center">
@@ -21,7 +21,7 @@
 
 
 **Assistant Chooser** allows users to easily set and manage their **default assistant app** or You can view, launch, and switch between all available assistants or search apps like [Launchpad Search](https://github.com/Ayaanh001/launchpad-search)
-[SpotLight Search](https://github.com/Ayaanh001/SpotlightSearch)   directly from the app.
+, [SpotLight Search](https://github.com/Ayaanh001/SpotlightSearch)   directly from the app.
 
 It also provides **quick shortcuts** and **Quick Settings tiles** for faster access to assistant-related actions.
 
@@ -40,16 +40,13 @@ It also provides **quick shortcuts** and **Quick Settings tiles** for faster acc
 
 - **Language**: 100% [Kotlin](https://kotlinlang.org/)
 - **UI**: [Jetpack Compose](https://developer.android.com/jetpack/compose) for a declarative and modern UI.
+- **Min SDK**: Android 8.0 (API 26)
 
 
 ## 🚀 Getting Started
 
 To get a local copy up and running, follow these simple steps.
 
-### Prerequisites
-
-- Android Studio Iguana | 2023.2.1 or newer.
-- Android SDK 26 or newer.
 
 ### Installation
 
@@ -105,4 +102,4 @@ This method allows you to keep Google as the system assistant so that Gemini lau
 If you **do not need Gemini Assistant**, you can instead set **Assistant Chooser** as the **default assistant**.
 In this mode:
 Clicking the **Google** app will open **Google’s voice search**, not Gemini
-Assistant switching inside the app continues to work normally
+Assistant switching inside the app continues to work normally.
