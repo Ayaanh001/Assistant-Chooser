@@ -1,6 +1,6 @@
 # Assistant Chooser  
 
-**Set, switch default assistant faster and use all your assistant apps from one place.**
+**Use all your assistant and search apps from one place and set or switch default assistant faster.**
 <p align="center">
   <img src="assets/icon.png" alt="App Icon" width="128"/>
 </p>
@@ -20,27 +20,25 @@
 </p>
 
 
-**Assistant Chooser** allows users to easily set and manage their **default assistant app** or You can view, launch, and switch between all available assistants or search apps like [Launchpad Search](https://github.com/Ayaanh001/launchpad-search)
-, [SpotLight Search](https://github.com/Ayaanh001/SpotlightSearch)   directly from the app.
-
+**Assistant Chooser** allows users to easily view, launch and switch between all available assistants or search apps like [Launchpad Search](https://github.com/Ayaanh001/launchpad-search)
+, [SpotLight Search](https://github.com/Ayaanh001/SpotlightSearch)   directly from this app or you set **default assistant app** faster.
 ## 📱 How to Use
 
 1. Select **Assistant Chooser** as your default digital assistant.
 2. Now to open the app you use any gesture
+    - using power button or
 
-• using power button or
+    - Assistant opening gestures like 
 
-• Assistant opening gestures like 
+      **for buttons using users**:
 
-**for buttons using users**:
+      Long pressing on Home Button
+  
+      **For Gestures using users**:
 
-Long pressing on Home Button
+      Swipe from bottom corners to open the app.
 
-**For Gestures using users**:
-
-Swipe from bottom corners to open the app.
-
-• You can also open from  **Quick Settings tiles** for faster access.
+    - You can also open from  **Quick Settings tiles** for faster access.
 
 3. After opening Click on any app's name to open its voice Assistant or full open. 
 4. Clicking on the radio 🔘 button lets you choose that app as default assistant manually, because of Android restrictions we cannot directly set it, this is the only faster method.
