@@ -1,12 +1,12 @@
-# Assistant Chooser 📱 
+# Assistant Chooser  
 
-**Set, switch, and use all your assistants apps from one place.**
+**Use all your assistant and search apps from one place and set or switch default assistant faster.**
 <p align="center">
   <img src="assets/icon.png" alt="App Icon" width="128"/>
 </p>
 
 <p align="center">
-  <img src="assets/screenshot.png" alt="Screenshot" width="200" style="border-radius:26px;"/>
+  <img src="assets/App.png" alt="Screenshot" width="200" style="border-radius:26px;"/>
   
 </p>
 
@@ -20,10 +20,28 @@
 </p>
 
 
-**Assistant Chooser** is an Android application that allows users to easily set and manage their **default assistant app**.  
-You can view, launch, and switch between all available assistants directly from the app.
+**Assistant Chooser** allows users to easily view, launch and switch between all available assistants or search apps like [Launchpad Search](https://github.com/Ayaanh001/launchpad-search)
+, [SpotLight Search](https://github.com/Ayaanh001/SpotlightSearch)   directly from this app or you set **default assistant app** faster.
+## 📱 How to Use
 
-It also provides **quick shortcuts** and **Quick Settings tiles** for faster access to assistant-related actions.
+1. Select **Assistant Chooser** as your default digital assistant.
+2. Now to open the app you use any gesture
+    - using power button or
+
+    - Assistant opening gestures like 
+
+      **for buttons using users**:
+
+      Long pressing on Home Button
+  
+      **For Gestures using users**:
+
+      Swipe from bottom corners to open the app.
+
+    - You can also open from  **Quick Settings tiles** for faster access.
+
+3. After opening Click on any app's name to open its voice Assistant or full open. 
+4. Clicking on the radio 🔘 button lets you choose that app as default assistant manually, because of Android restrictions we cannot directly set it, this is the only faster method.
 
 ## 🚀 Features
 
@@ -40,16 +58,13 @@ It also provides **quick shortcuts** and **Quick Settings tiles** for faster acc
 
 - **Language**: 100% [Kotlin](https://kotlinlang.org/)
 - **UI**: [Jetpack Compose](https://developer.android.com/jetpack/compose) for a declarative and modern UI.
+- **Min SDK**: Android 8.0 (API 26)
 
 
 ## 🚀 Getting Started
 
 To get a local copy up and running, follow these simple steps.
 
-### Prerequisites
-
-- Android Studio Iguana | 2023.2.1 or newer.
-- Android SDK 26 or newer.
 
 ### Installation
 
@@ -60,6 +75,7 @@ To get a local copy up and running, follow these simple steps.
 2. Open the project in Android Studio.
 3. Let Gradle sync and download the required dependencies.
 4. Run the app on an emulator or a physical device.
+
 
 ## 📂 Project Structure
 
@@ -81,3 +97,27 @@ Assistant-Chooser/
 
 
 ```
+
+## ⚠️ Known Issues
+
+The **Issue: Google app does not launch Gemini Assistant**
+When tapping the **Google app**, some devices do **not** open the **Gemini Assistant** as expected.
+
+✅ **Cause**
+Android requires **Google** to be set as the default digital assistant in order for the Gemini Assistant to launch correctly.
+
+✅ **Solution / Workaround (Recommended if you want to use Gemini Assistant)**
+1. Set **Google** as your **default digital assistant** in system settings.
+2. Open **Assistant Chooser** using the **Quick Settings Tile**:
+- you can Add Assistant Chooser via “Add Tile” option in app or 
+- Add from the Quick Settings panel
+- Use this tile to launch or switch assistants
+
+This method allows you to keep Google as the system assistant so that Gemini launches properly, while still giving you quick access to Assistant Chooser.
+
+ℹ️ **Alternative Behavior**
+
+If you **do not need Gemini Assistant**, you can instead set **Assistant Chooser** as the **default assistant**.
+In this mode:
+Clicking the **Google** app will open **Google’s voice search**, not Gemini
+Assistant switching inside the app continues to work normally.
