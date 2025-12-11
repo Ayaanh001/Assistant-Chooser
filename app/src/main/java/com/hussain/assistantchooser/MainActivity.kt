@@ -5,79 +5,73 @@ import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import android.database.ContentObserver
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.hussain.assistantchooser.ui.theme.AssistantChooserTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.hussain.assistantchooser.com.hussain.assistantchooser.AppFilterMode
 import java.util.concurrent.Executors
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf as composeMutableStateOf
 
 class MainActivity : ComponentActivity() {
 
-    // SharedPreferences keys
-    private val PREFS_NAME = "assistant_prefs"
-    private val KEY_OPEN_APP = "open_app"
-    private val KEY_CLOSE_AFTER_LAUNCH = "close_after_launch"
-    private val openAppState = mutableStateOf(false)
-    private val closeAfterLaunchState = mutableStateOf(true)
+    private val showPackageNameState = composeMutableStateOf(true)
+    private val openAppState = composeMutableStateOf(false)
+    private val closeAfterLaunchState = composeMutableStateOf(true)
+    private val appFilterModeState = composeMutableStateOf(AppFilterMode.VOICE_ASSISTANTS)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // load initial preferences
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         openAppState.value = prefs.getBoolean(KEY_OPEN_APP, false)
         closeAfterLaunchState.value = prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)
+        showPackageNameState.value = prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, true)
+
+        val savedModeName = prefs.getString(KEY_APP_FILTER_MODE, AppFilterMode.VOICE_ASSISTANTS.name)
+        appFilterModeState.value = savedModeName?.let {
+            try {
+                AppFilterMode.valueOf(it)
+            } catch (e: IllegalArgumentException) {
+                AppFilterMode.VOICE_ASSISTANTS
+            }
+        } ?: AppFilterMode.VOICE_ASSISTANTS
 
         val pm = packageManager
 
-        // Query for apps responding to ACTION_ASSIST (activities)
         val assistIntent = Intent(Intent.ACTION_ASSIST)
         val assistResolveInfos = pm.queryIntentActivities(assistIntent, PackageManager.MATCH_ALL)
 
-        // Query for services implementing VoiceInteractionService
         val voiceIntent = Intent("android.service.voice.VoiceInteractionService")
         val voiceResolveInfos = pm.queryIntentServices(voiceIntent, PackageManager.MATCH_ALL)
 
-        // Build list of AssistantApp objects from activities
         val assistApps = assistResolveInfos.map {
             val appInfo = it.activityInfo.applicationInfo
             val label = pm.getApplicationLabel(appInfo).toString()
@@ -85,7 +79,6 @@ class MainActivity : ComponentActivity() {
             AssistantApp(label, appInfo.packageName, icon)
         }
 
-        // Build list of AssistantApp objects from services
         val voiceApps = voiceResolveInfos.map {
             val appInfo = it.serviceInfo.applicationInfo
             val label = pm.getApplicationLabel(appInfo).toString()
@@ -93,10 +86,24 @@ class MainActivity : ComponentActivity() {
             AssistantApp(label, appInfo.packageName, icon)
         }
 
-        // Combine lists and remove duplicates by package name
-        val combinedApps = (assistApps + voiceApps)
+        val voiceAssistants = (assistApps + voiceApps)
             .distinctBy { it.packageName }
             .sortedBy { it.name.lowercase() }
+
+        // Get all installed apps (used only for Custom Apps)
+        val allApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+            .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+            .map {
+                val label = pm.getApplicationLabel(it).toString()
+                val icon = pm.getApplicationIcon(it)
+                AssistantApp(label, it.packageName, icon)
+            }
+            .sortedBy { it.name.lowercase() }
+
+        // Pre-cache icon bitmaps on background thread (your AssistantApp likely lazily converts drawables)
+        Executors.newSingleThreadExecutor().execute {
+            voiceAssistants.forEach { try { it.iconBitmap } catch (_: Exception) { } }
+        }
 
         setContent {
             AssistantChooserTheme {
@@ -111,17 +118,30 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                // hoisted Compose state for currently selected package (system default)
                 var selectedPackage by remember { mutableStateOf<String?>(null) }
                 val context = LocalContext.current
 
-                Surface(modifier = Modifier.fillMaxSize()) {
+                // OBSERVE system default assistant and update selectedPackage automatically
+                RememberObserveDefaultAssistant { pkg ->
+                    // pkg is normalized package name or null
+                    selectedPackage = pkg
+                }
+
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     AssistantChooserScreen(
-                        assistantApps = combinedApps,
+                        voiceAssistants = voiceAssistants,
+                        allApps = allApps,
                         selectedPackage = selectedPackage,
+                        appFilterMode = appFilterModeState.value,
+                        onAppFilterModeChange = { mode ->
+                            appFilterModeState.value = mode
+                            prefs.edit().putString(KEY_APP_FILTER_MODE, mode.name).apply()
+                        },
                         onAppSelected = { selectedApp ->
+                            // keep existing behavior: open system settings to let user pick default
                             selectedPackage = selectedApp.packageName
 
-                            // Open assistant settings to let user set default - keep original behaviour
                             val settingsIntent = Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).apply {
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             }
@@ -134,16 +154,13 @@ class MainActivity : ComponentActivity() {
                             ).show()
                         },
                         onAppClick = { pkg ->
-                            // Use current settings to decide behavior
                             if (openAppState.value) {
-                                // Open *app* (launch intent) first
                                 try {
                                     val launchIntent = pm.getLaunchIntentForPackage(pkg)
                                     if (launchIntent != null) {
                                         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         context.startActivity(launchIntent)
                                     } else {
-                                        // fallback to assistant behavior if no launchable activity
                                         launchAssistantForPackage(context, pm, pkg)
                                     }
                                 } catch (e: Exception) {
@@ -151,28 +168,29 @@ class MainActivity : ComponentActivity() {
                                     launchAssistantForPackage(context, pm, pkg)
                                 }
                             } else {
-                                // Open assistant behavior (voice/assist) as before
                                 launchAssistantForPackage(context, pm, pkg)
                             }
 
-                            // If setting enabled, close this activity
                             if (closeAfterLaunchState.value) {
                                 finish()
                             }
                         },
                         onSettingsClick = {
-                            // Open in-app SettingsActivity
-                            val intent = Intent(context,
-                                SettingsActivity::class.java).apply{
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                            context.startActivity(intent) },
-
+                            val intent = Intent(context, SettingsActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                        },
                         onAddTileClicked = {
-                            // Request add quick settings tile (handles API 33+ and fallback)
                             requestAddQuickSettingsTile()
                         },
+                        onSaveCustomApps = { customPackages ->
+                            prefs.edit().putStringSet(KEY_CUSTOM_APPS, customPackages.toSet()).apply()
+                        },
+                        savedCustomApps = prefs.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet(),
                         openApp = openAppState.value,
-                        closeAfterLaunch = closeAfterLaunchState.value
+                        closeAfterLaunch = closeAfterLaunchState.value,
+                        showPackageName = showPackageNameState.value
                     )
                 }
             }
@@ -181,16 +199,25 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // reload settings in case user changed them in SettingsActivity
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         openAppState.value = prefs.getBoolean(KEY_OPEN_APP, false)
         closeAfterLaunchState.value = prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)
+        showPackageNameState.value = prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, true)
+
+        val savedModeName = prefs.getString(KEY_APP_FILTER_MODE, AppFilterMode.VOICE_ASSISTANTS.name)
+        appFilterModeState.value = savedModeName?.let {
+            try {
+                AppFilterMode.valueOf(it)
+            } catch (e: IllegalArgumentException) {
+                AppFilterMode.VOICE_ASSISTANTS
+            }
+        } ?: AppFilterMode.VOICE_ASSISTANTS
     }
 
     private fun requestAddQuickSettingsTile() {
         val context = this
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // API 33+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val statusBar = getSystemService(StatusBarManager::class.java)
             if (statusBar == null) {
                 Toast.makeText(context, "Cannot access StatusBarManager", Toast.LENGTH_SHORT).show()
@@ -198,18 +225,15 @@ class MainActivity : ComponentActivity() {
             }
 
             val tileComponent = ComponentName(context, QuickLaunchTileService::class.java)
-
-
             val labelResId = resources.getIdentifier("tile_label", "string", packageName)
             val tileLabel = if (labelResId != 0) getString(labelResId) else "Assistant Chooser"
-
             val tileIcon = try {
                 Icon.createWithResource(context, R.drawable.qs_tile)
             } catch (e: Exception) {
                 Icon.createWithResource(context, android.R.mipmap.sym_def_app_icon)
             }
 
-            val executor = Executors.newSingleThreadExecutor()
+            val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
 
             try {
                 statusBar.requestAddTileService(
@@ -218,7 +242,6 @@ class MainActivity : ComponentActivity() {
                     tileIcon,
                     executor,
                     java.util.function.Consumer { result ->
-                        // result may be Boolean, java.lang.Boolean, Int, etc. Normalize it safely:
                         val success = when (result) {
                             is Boolean -> result
                             is java.lang.Boolean -> result.booleanValue()
@@ -251,37 +274,31 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun launchAssistantForPackage(context: android.content.Context, pm: PackageManager, pkg: String) {
+    private fun launchAssistantForPackage(
+        context: android.content.Context,
+        pm: PackageManager,
+        pkg: String
+    ) {
         try {
-            // 1. Google Assistant Override
             if (pkg == "com.google.android.googlequicksearchbox") {
-                // Try multiple methods for Google Assistant
                 val methods = listOf(
-                    // Method 1: Direct assistant launch via search action
                     Intent("android.intent.action.VOICE_ASSIST").apply {
                         setPackage(pkg)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     },
-                    // Method 2: Google app search with voice
                     Intent(Intent.ACTION_SEARCH).apply {
                         setPackage(pkg)
                         putExtra("com.google.android.googlequicksearchbox.EXTRA_VOICE_SEARCH", true)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     },
-                    // Method 3: Voice command
                     Intent(Intent.ACTION_VOICE_COMMAND).apply {
                         setPackage(pkg)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     },
-                    // Method 4: Direct component launch to VoiceSearchActivity
                     Intent().apply {
-                        component = ComponentName(
-                            pkg,
-                            "com.google.android.voicesearch.VoiceSearchActivity"
-                        )
+                        component = ComponentName(pkg, "com.google.android.voicesearch.VoiceSearchActivity")
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     },
-                    // Method 5: Assistant settings intent
                     Intent("com.google.android.googlequicksearchbox.GOOGLE_ASSISTANT").apply {
                         setPackage(pkg)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -299,12 +316,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // If all methods fail, show error
-                Toast.makeText(context, "Google Assistant not available. Please ensure it's enabled in system settings.", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    context,
+                    "Google Assistant not available. Please ensure it's enabled in system settings.",
+                    Toast.LENGTH_LONG
+                ).show()
                 return
             }
 
-            // 2. ChatGPT Override
             if (pkg == "com.openai.chatgpt") {
                 try {
                     val componentName = ComponentName(
@@ -320,12 +339,13 @@ class MainActivity : ComponentActivity() {
                     return
                 } catch (e: Exception) {
                     Log.e("MainActivity", "Failed to launch ChatGPT AssistantActivity", e)
-                    // Fall through to generic launcher
                 }
             }
 
-            // 3) ACTION_ASSIST -> find an activity that declared this action
-            val assistResolvers = packageManager.queryIntentActivities(Intent(Intent.ACTION_ASSIST), PackageManager.MATCH_ALL)
+            val assistResolvers = packageManager.queryIntentActivities(
+                Intent(Intent.ACTION_ASSIST),
+                PackageManager.MATCH_ALL
+            )
             val assistRi = assistResolvers.firstOrNull { it.activityInfo.packageName == pkg }
 
             if (assistRi != null) {
@@ -338,8 +358,10 @@ class MainActivity : ComponentActivity() {
                 return
             }
 
-            // 4) ACTION_VOICE_COMMAND (Generic)
-            val voiceCmdResolvers = packageManager.queryIntentActivities(Intent(Intent.ACTION_VOICE_COMMAND), PackageManager.MATCH_ALL)
+            val voiceCmdResolvers = packageManager.queryIntentActivities(
+                Intent(Intent.ACTION_VOICE_COMMAND),
+                PackageManager.MATCH_ALL
+            )
             val voiceCmdRi = voiceCmdResolvers.firstOrNull { it.activityInfo.packageName == pkg }
             if (voiceCmdRi != null) {
                 val comp = ComponentName(voiceCmdRi.activityInfo.packageName, voiceCmdRi.activityInfo.name)
@@ -351,7 +373,6 @@ class MainActivity : ComponentActivity() {
                 return
             }
 
-            // 5) Fallback to Main Launch Intent
             val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
             if (launchIntent != null) {
                 launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -362,7 +383,6 @@ class MainActivity : ComponentActivity() {
 
         } catch (e: Exception) {
             Log.e("MainActivity", "Error launching assistant for $pkg", e)
-            // Final fallback
             val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
             launchIntent?.let {
                 it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -370,223 +390,45 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
 
-data class AssistantApp(
-    val name: String,
-    val packageName: String,
-    val icon: Drawable
-)
+    @Composable
+    fun RememberObserveDefaultAssistant(onDefaultAssistantChanged: (String?) -> Unit) {
+        val context = LocalContext.current
+        val resolver = remember { context.contentResolver }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AssistantChooserScreen(
-    assistantApps: List<AssistantApp>,
-    selectedPackage: String?,
-    onAppSelected: (AssistantApp) -> Unit,
-    onAppClick: (String) -> Unit,
-    onSettingsClick: () -> Unit,
-    onAddTileClicked: () -> Unit,
-    openApp: Boolean,
-    closeAfterLaunch: Boolean,
-) {
-    val context = LocalContext.current
-    Scaffold(
-        topBar = {
-            Column {
-                CenterAlignedTopAppBar(
-                    actions = {
-                        var menuExpanded by remember { mutableStateOf(false) }
+        DisposableEffect(resolver) {
 
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-                        }
+            fun readAndEmit() {
+                // Use literal key instead of Settings.Secure.ASSISTANT
+                val raw = Settings.Secure.getString(resolver, "assistant")
+                val pkg = try {
+                    ComponentName.unflattenFromString(raw)?.packageName ?: raw
+                } catch (e: Exception) {
+                    raw
+                }
 
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
-                            modifier = Modifier
-                                .widthIn(min = 150.dp)
-                                .offset(x = (4).dp), // Shift left to align better
-                            shape = RoundedCornerShape(16.dp),
-                            tonalElevation = 3.dp,
-                            shadowElevation = 8.dp
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Add Tile") },
-                                onClick = {
-                                    menuExpanded = false
-                                    onAddTileClicked()
-                                },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Add, contentDescription = "Add")
-                                }
-                            )
+                val normalized = pkg
+                    ?.takeIf { it.isNotBlank() && it != "none" && it != "ITEM_NONE_VALUE" }
 
-                            // Separator line
-                            HorizontalDivider(
-                                modifier = Modifier.padding(start = 48.dp, end = 16.dp),
-                                thickness = 1.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
-
-                            DropdownMenuItem(
-                                text = { Text("Settings") },
-                                onClick = {
-                                    menuExpanded = false
-                                    onSettingsClick()
-                                },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Settings, contentDescription = "Settings")
-                                }
-                            )
-                        }
-                    },
-                    title = {
-                        Text(
-                            "Assistant Chooser",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color.Transparent
-                    )
-                )
-
-                Divider(
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    thickness = 1.dp
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+                onDefaultAssistantChanged(normalized)
             }
-        },
-        contentWindowInsets = WindowInsets.systemBars
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-        ) {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                itemsIndexed(assistantApps) { index, app ->
-                    val shape = when {
-                        assistantApps.size == 1 -> RoundedCornerShape(24.dp)
-                        index == 0 -> RoundedCornerShape(
-                            topStart = 24.dp, topEnd = 24.dp,
-                            bottomStart = 8.dp, bottomEnd = 8.dp
-                        )
-                        index == assistantApps.size - 1 -> RoundedCornerShape(
-                            topStart = 8.dp, topEnd = 8.dp,
-                            bottomStart = 24.dp, bottomEnd = 24.dp
-                        )
-                        else -> RoundedCornerShape(8.dp)
-                    }
 
-                    AssistantAppRadioCard(
-                        app = app,
-                        shape = shape,
-                        selected = app.packageName == selectedPackage,
-                        onSelect = { onAppSelected(app) },
-                        onOpenApp = { onAppClick(app.packageName) }
-                    )
+            val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+                override fun onChange(selfChange: Boolean, uri: Uri?) {
+                    readAndEmit()
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Also use literal key here
+            val assistantUri = Settings.Secure.getUriFor("assistant")
 
-            Button(
-                onClick = {
-                    // Open Digital Assistant Settings
-                    val intent = Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(intent)
-                },
-                colors = ButtonDefaults.filledTonalButtonColors(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(28.dp)
-            ) {
-                Text("Open Default Assistant Settings")
+            resolver.registerContentObserver(assistantUri, false, observer)
+
+            readAndEmit()
+
+            onDispose {
+                resolver.unregisterContentObserver(observer)
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
         }
     }
-}
-
-@Composable
-fun AssistantAppRadioCard(
-    app: AssistantApp,
-    shape: RoundedCornerShape,
-    selected: Boolean,
-    onSelect: () -> Unit,
-    onOpenApp: () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth(),
-        shape = shape,
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Left side clickable: open app / assistant depending on setting
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { onOpenApp() },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    bitmap = app.icon.toBitmap().asImageBitmap(),
-                    contentDescription = app.name,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                )
-                Spacer(Modifier.width(16.dp))
-                Column {
-                    Text(
-                        text = app.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = app.packageName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            // Radio button on right side: selecting default assistant
-            RadioButton(
-                selected = selected,
-                onClick = onSelect
-            )
-        }
-    }
-}
-
-// Drawable → Bitmap helper
-fun Drawable.toBitmap(): Bitmap {
-    if (this is BitmapDrawable) return this.bitmap
-    val width = intrinsicWidth.takeIf { it > 0 } ?: 1
-    val height = intrinsicHeight.takeIf { it > 0 } ?: 1
-    val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bmp)
-    setBounds(0, 0, canvas.width, canvas.height)
-    draw(canvas)
-    return bmp
 }
