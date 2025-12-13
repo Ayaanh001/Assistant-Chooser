@@ -1,7 +1,25 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Splash screen theme (shown before Compose) -->
+    <style name="Theme.AssistantChooser.Splash" parent="Theme.SplashScreen">
+        <!-- Material You background (dynamic, light/dark aware) -->
+        <item name="windowSplashScreenBackground">?android:colorBackground</item>
+
+        <!-- App icon in center -->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+
+        <!-- No delay -->
+        <item name="windowSplashScreenAnimationDuration">0</item>
+
+        <!-- Theme used AFTER splash -->
+        <item name="postSplashScreenTheme">@style/Theme.AssistantChooser</item>
+    </style>
+
+    <!-- Main app theme (used by Compose) -->
     <style name="Theme.AssistantChooser" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
+        <!-- Prevent default white background -->
+        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
 </resources>

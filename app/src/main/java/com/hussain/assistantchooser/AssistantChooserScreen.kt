@@ -3,6 +3,7 @@ package com.hussain.assistantchooser
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -46,7 +47,6 @@ fun AssistantChooserScreen(
     selectedPackage: String?,
     appFilterMode: AppFilterMode,
     onAppFilterModeChange: (AppFilterMode) -> Unit,
-    onAppSelected: (AssistantApp) -> Unit,
     onAppClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
     onAddTileClicked: () -> Unit,
@@ -184,7 +184,18 @@ fun AssistantChooserScreen(
                         app = app,
                         shape = shape,
                         selected = app.packageName == selectedPackage,
-                        onSelect = { onAppSelected(app) },
+                        onSelect = {
+                            val intent = Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+
+                            Toast.makeText(
+                                context,
+                                "Select \"${app.name}\" as your default assistant",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        },
                         onOpenApp = { onAppClick(app.packageName) },
                         showPackageName = showPackageName
                     )
