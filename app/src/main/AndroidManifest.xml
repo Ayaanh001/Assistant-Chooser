@@ -22,7 +22,7 @@
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AssistantChooser"
+        android:theme="@style/Theme.AssistantChooser.Splash"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round">
 
@@ -33,6 +33,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:theme="@style/Theme.AssistantChooser.Splash"
             android:enableOnBackInvokedCallback="true">
 
             <!-- Normal launcher entry -->
@@ -54,6 +55,7 @@
 
         <activity
             android:name=".SettingsActivity"
+            android:theme="@style/Theme.AssistantChooser"
             android:enableOnBackInvokedCallback="true"/>
 
         <service

@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import com.hussain.assistantchooser.ui.theme.AssistantChooserTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.hussain.assistantchooser.com.hussain.assistantchooser.AppFilterMode
 import java.util.concurrent.Executors
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
     private val appFilterModeState = composeMutableStateOf(AppFilterMode.VOICE_ASSISTANTS)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -138,22 +140,7 @@ class MainActivity : ComponentActivity() {
                             appFilterModeState.value = mode
                             prefs.edit().putString(KEY_APP_FILTER_MODE, mode.name).apply()
                         },
-                        onAppSelected = { selectedApp ->
-                            // keep existing behavior: open system settings to let user pick default
-                            selectedPackage = selectedApp.packageName
-
-                            val settingsIntent = Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            context.startActivity(settingsIntent)
-
-                            Toast.makeText(
-                                context,
-                                "Select \"${selectedApp.name}\" as your default assistant",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        },
-                        onAppClick = { pkg ->
+                                onAppClick = { pkg ->
                             if (openAppState.value) {
                                 try {
                                     val launchIntent = pm.getLaunchIntentForPackage(pkg)
