@@ -258,7 +258,7 @@ fun SettingsScreen(
                     SettingTile(
                         icon = Icons.Default.ExitToApp,
                         title = "Auto close after launch",
-                        subtitle = "Close AssistantChooser after opening another app",
+                        subtitle = "Close Assistant Chooser after opening another app",
                         checked = closeAfter,
                         onCheckedChange = { enabled ->
                             performHapticFeedback(context)
