@@ -27,6 +27,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -63,6 +66,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.vector.ImageVector
 
 class SettingsActivity : ComponentActivity() {
 
@@ -157,16 +162,14 @@ fun SettingsScreen(
     var closeAfter by remember { mutableStateOf(initialCloseAfter) }
     var showPackageName by remember { mutableStateOf(initialShowPackage) }
 
-    val currentVersion = "1.2" // keep in sync with your app version if you want
+    val currentVersion = "1.2"
     var latestVersion by remember { mutableStateOf<String?>(null) }
-    var updateAvailable by remember { mutableStateOf<Boolean?>(null) } // null = not checked yet
+    var updateAvailable by remember { mutableStateOf<Boolean?>(null) }
     var loading by remember { mutableStateOf(false) }
 
-    // snackbar state + coroutine scope
     val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // flags to avoid repeating the same snackbar repeatedly during recompositions
     var shownNoUpdateSnackbar by remember { mutableStateOf(false) }
     var shownUpdateSnackbar by remember { mutableStateOf(false) }
     var shownErrorSnackbar by remember { mutableStateOf(false) }
@@ -182,19 +185,20 @@ fun SettingsScreen(
                     )
                 },
                 navigationIcon = {
-                    Surface(
+                    androidx.compose.material3.FilledIconButton(
+                        onClick = onBack,
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
                         modifier = Modifier
                             .padding(start = 16.dp)
-                            .size(40.dp)
-                            .clickable { onBack() }
+                            .size(40.dp),
+                        colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        )
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(8.dp)
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -220,8 +224,9 @@ fun SettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
 
                     SettingTile(
+                        icon = Icons.Default.Label,
                         title = "Show package names",
-                        subtitle = "Display the package name beneath each app in the chooser",
+                        subtitle = "Show the app's package name below each app",
                         checked = showPackageName,
                         onCheckedChange = { enabled ->
                             performHapticFeedback(context)
@@ -235,8 +240,9 @@ fun SettingsScreen(
                     )
 
                     SettingTile(
+                        icon = Icons.Default.Apps,
                         title = "Open App",
-                        subtitle = "Clicking on app name opens the app instead of voice assistant",
+                        subtitle = "Tap an app name to open the app instead of voice assistant",
                         checked = openApp,
                         onCheckedChange = { enabled ->
                             performHapticFeedback(context)
@@ -250,8 +256,9 @@ fun SettingsScreen(
                     )
 
                     SettingTile(
-                        title = "Close app after activity launch",
-                        subtitle = "Close AssistantChooser after launching another app",
+                        icon = Icons.Default.ExitToApp,
+                        title = "Auto close after launch",
+                        subtitle = "Close AssistantChooser after opening another app",
                         checked = closeAfter,
                         onCheckedChange = { enabled ->
                             performHapticFeedback(context)
@@ -264,7 +271,6 @@ fun SettingsScreen(
                         )
                     )
                 }
-
             }
 
             item {
@@ -312,7 +318,6 @@ fun SettingsScreen(
                         shape = middleShape
                     )
 
-                    // VERSION ROW WITH CHECK UPDATES BUTTON
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = bottomShape,
@@ -339,16 +344,13 @@ fun SettingsScreen(
                                 )
                             }
 
-                            // Check updates button (disabled while loading, shows spinner)
                             Button(
                                 onClick = {
-                                    // reset shown flags to allow new snackbars on each check
                                     shownNoUpdateSnackbar = false
                                     shownUpdateSnackbar = false
                                     shownErrorSnackbar = false
 
                                     loading = true
-                                    // Launch coroutine to fetch latest version
                                     scope.launch(Dispatchers.IO) {
                                         val fetched = checkLatestVersionFromGitHub(
                                             "Ayaanh001",
@@ -357,12 +359,10 @@ fun SettingsScreen(
 
                                         withContext(Dispatchers.Main) {
                                             if (fetched == null) {
-                                                // network / error
                                                 latestVersion = null
                                                 updateAvailable = false
                                             } else {
                                                 latestVersion = fetched.removePrefix("v")
-                                                // use robust comparison
                                                 updateAvailable = isNewerVersion(
                                                     latestVersion!!,
                                                     currentVersion
@@ -370,9 +370,7 @@ fun SettingsScreen(
                                             }
                                             loading = false
 
-                                            // Show appropriate snackbar
                                             scope.launch {
-                                                // Update available
                                                 if (updateAvailable == true && !shownUpdateSnackbar) {
                                                     shownUpdateSnackbar = true
                                                     val message = "New update available: ${latestVersion ?: ""}"
@@ -382,7 +380,6 @@ fun SettingsScreen(
                                                         duration = androidx.compose.material3.SnackbarDuration.Indefinite
                                                     )
                                                     if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
-                                                        // Open releases page
                                                         val intent = Intent(
                                                             Intent.ACTION_VIEW,
                                                             Uri.parse("https://github.com/Ayaanh001/Assistant-Chooser/releases/latest")
@@ -413,7 +410,13 @@ fun SettingsScreen(
                                     horizontal = 12.dp,
                                     vertical = 6.dp
                                 ),
-                                shape = RoundedCornerShape(20.dp)
+                                shape = RoundedCornerShape(20.dp),
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
+                                    disabledContentColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.6f)
+                                )
                             ) {
                                 if (loading) {
                                     CircularProgressIndicator(
@@ -429,17 +432,18 @@ fun SettingsScreen(
                                         Icon(
                                             imageVector = Icons.Default.History,
                                             contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.onTertiaryContainer
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             "Check updates",
-                                            style = MaterialTheme.typography.bodyMedium
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
                                         )
                                     }
                                 }
                             }
-
                         }
                     }
                 }
@@ -447,7 +451,6 @@ fun SettingsScreen(
         }
     }
 }
-
 
 suspend fun checkLatestVersionFromGitHub(owner: String, repo: String): String? {
     return try {
@@ -479,6 +482,7 @@ suspend fun checkLatestVersionFromGitHub(owner: String, repo: String): String? {
 
 @Composable
 fun SettingTile(
+    icon: ImageVector,
     title: String,
     subtitle: String,
     checked: Boolean,
@@ -498,19 +502,41 @@ fun SettingTile(
                 .clickable { onCheckedChange(!checked) }
                 .padding(16.dp)
         ) {
+            // Icon with background
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 2
                 )
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 4.dp),
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 3
                 )
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             Switch(
                 checked = checked,
@@ -551,13 +577,17 @@ fun ClickableTile(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1
                 )
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 4.dp),
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1
                 )
             }
         }
