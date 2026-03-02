@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+
     <queries>
         <intent>
             <action android:name="android.intent.action.ASSIST" />
@@ -19,6 +21,7 @@
     </queries>
 
     <application
+        android:name=".AssistantChooserApplication"
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
@@ -31,21 +34,15 @@
             android:value="true" />
 
         <activity
-            android:name=".MainActivity"
+            android:name=".main.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AssistantChooser.Splash"
-            android:enableOnBackInvokedCallback="true">
+            android:enableOnBackInvokedCallback="true"
+            android:launchMode="singleTop">
 
-            <!-- Normal launcher entry -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-            <!-- Assistant entry (this makes app show in assistant list) -->
-            <intent-filter>
-                <action android:name="android.intent.action.ASSIST" />
-                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
             <meta-data
@@ -54,12 +51,30 @@
         </activity>
 
         <activity
-            android:name=".SettingsActivity"
+            android:name=".overlay.AssistantOverlayActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AssistantChooser.Overlay"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:enableOnBackInvokedCallback="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true">
+
+            <!-- This is the entry point for the assistant button -->
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".settings.SettingsActivity"
             android:theme="@style/Theme.AssistantChooser"
-            android:enableOnBackInvokedCallback="true"/>
+            android:enableOnBackInvokedCallback="true" />
 
         <service
-            android:name=".QuickLaunchTileService"
+            android:name=".services.QuickLaunchTileService"
             android:icon="@drawable/qs_tile"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
             android:exported="true">
@@ -67,5 +82,6 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
+
     </application>
 </manifest>

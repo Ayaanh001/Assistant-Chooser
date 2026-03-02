@@ -28,10 +28,7 @@ fun GroupSurface(
                 else -> RoundedCornerShape(8.dp)
             }
             content(i, shape)
-
-            if (i != count - 1) {
-                Spacer(modifier = Modifier.height(3.dp))
-            }
+            if (i != count - 1) Spacer(modifier = Modifier.height(3.dp))
         }
     }
 }
