@@ -7,7 +7,11 @@
 </p>
 
 <p align="center">
-  <img src="assets/App.png" alt="Screenshot" width="200" style="border-radius:26px;"/>
+   <img src="assets/m1.jpg" alt="Screenshot" width="200" style="border-radius:26px;"/>
+   <img src="assets/m2.jpg" alt="Screenshot" width="200" style="border-radius:26px;"/>
+   <img src="assets/m3.jpg" alt="Screenshot" width="200" style="border-radius:26px;"/>
+   <img src="assets/m4.jpg" alt="Screenshot" width="200" style="border-radius:26px;"/>
+   <img src="assets/m5.jpg" alt="Screenshot" width="200" style="border-radius:26px;"/>
 </p>
 
 <p align="center">
