@@ -4,7 +4,6 @@ import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,12 +31,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.hussain.assistantchooser.core.AppFilterMode
 import com.hussain.assistantchooser.core.AssistantApp
 import com.hussain.assistantchooser.ui.components.GroupSurface
 import com.hussain.assistantchooser.ui.components.SkeletonList
+import com.hussain.assistantchooser.ui.components.getGroupShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,14 +60,13 @@ fun AssistantChooserScreen(
     showPackageName: Boolean,
 ) {
     val context = LocalContext.current
-    var showFilterDialog   by remember { mutableStateOf(false) }
+    var showFilterDialog    by remember { mutableStateOf(false) }
     var showCustomAppPicker by remember { mutableStateOf(false) }
-    var customAppPackages  by remember { mutableStateOf(savedCustomApps.toList()) }
 
-    val currentAppList = remember(appFilterMode, customAppPackages, voiceAssistants, allApps) {
+    val currentAppList = remember(appFilterMode, savedCustomApps, voiceAssistants, allApps) {
         when (appFilterMode) {
             AppFilterMode.VOICE_ASSISTANTS -> voiceAssistants
-            AppFilterMode.CUSTOM_APPS      -> allApps.filter { it.packageName in customAppPackages }
+            AppFilterMode.CUSTOM_APPS      -> allApps.filter { it.packageName in savedCustomApps }
         }
     }
 
@@ -89,12 +90,12 @@ fun AssistantChooserScreen(
                             Icon(Icons.Default.MoreVert, contentDescription = "More")
                         }
                         DropdownMenu(
-                            expanded          = menuExpanded,
-                            onDismissRequest  = { menuExpanded = false },
-                            modifier          = Modifier.widthIn(min = 150.dp).offset(x = 4.dp),
-                            shape             = RoundedCornerShape(16.dp),
-                            tonalElevation    = 3.dp,
-                            shadowElevation   = 8.dp
+                            expanded         = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                            modifier         = Modifier.widthIn(min = 150.dp).offset(x = 4.dp),
+                            shape            = RoundedCornerShape(16.dp),
+                            tonalElevation   = 3.dp,
+                            shadowElevation  = 8.dp
                         ) {
                             DropdownMenuItem(
                                 text        = { Text("Add Tile") },
@@ -132,56 +133,111 @@ fun AssistantChooserScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
-            // Use GroupSurface inside the LazyColumn via itemsIndexed
-            LazyColumn(
-                modifier            = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                if (isLoading) {
-                    item {
-                        SkeletonList(count = 6, showPackageName = showPackageName)
-                    }
-                }
-                itemsIndexed(
-                    items = currentAppList,
-                    key = { _, app -> app.packageName }
-                ) { index, app ->
-                    val shape = remember(index, currentAppList.size) {
-                        when {
-                            currentAppList.size == 1 -> RoundedCornerShape(24.dp)
-                            index == 0 -> RoundedCornerShape(
-                                topStart = 24.dp, topEnd = 24.dp,
-                                bottomStart = 8.dp, bottomEnd = 8.dp
-                            )
+            if (!isLoading && appFilterMode == AppFilterMode.CUSTOM_APPS && currentAppList.isEmpty()) {
+                // ── Empty state ──────────────────────────────────────────────
+                Box(
+                    modifier         = Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier            = Modifier.padding(horizontal = 32.dp)
+                    ) {
+                        // Soft icon container
+                        Surface(
+                            shape          = CircleShape,
+                            color          = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            tonalElevation = 0.dp,
+                            modifier       = Modifier.size(88.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector        = Icons.Default.Apps,
+                                    contentDescription = null,
+                                    modifier           = Modifier.size(40.dp),
+                                    tint               = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
 
-                            index == currentAppList.size - 1 -> RoundedCornerShape(
-                                topStart = 8.dp, topEnd = 8.dp,
-                                bottomStart = 24.dp, bottomEnd = 24.dp
-                            )
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                            else -> RoundedCornerShape(8.dp)
+                        // Title
+                        Text(
+                            text       = "No apps selected yet",
+                            style      = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Medium,
+                            color      = MaterialTheme.colorScheme.onSurface,
+                            textAlign  = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Subtitle — explains what and why
+                        Text(
+                            text       = "Choose which apps appear here. You can pick any installed app — not just assistants.",
+                            style      = MaterialTheme.typography.bodyMedium,
+                            color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign  = TextAlign.Center,
+                            lineHeight = 22.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(28.dp))
+
+                        // Primary CTA
+                        Button(
+                            onClick = { showCustomAppPicker = true },
+                            shape   = CircleShape,
+                            colors  = ButtonDefaults.buttonColors()
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier           = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Choose apps")
                         }
                     }
-                    AssistantAppRadioCard(
-                        app = app,
-                        shape = shape,
-                        selected = app.packageName == selectedPackage,
-                        onSelect = {
-                            context.startActivity(
-                                Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)
-                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            )
-                            Toast.makeText(
-                                context,
-                                "Select \"${app.name}\" as your default assistant",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        },
-                        onOpenApp = { onAppClick(app.packageName) },
-                        showPackageName = showPackageName
-                    )
                 }
-
+            } else {
+                // ── App list ─────────────────────────────────────────────────
+                LazyColumn(
+                    modifier            = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    if (isLoading) {
+                        item {
+                            SkeletonList(count = 6, showPackageName = showPackageName)
+                        }
+                    }
+                    itemsIndexed(
+                        items = currentAppList,
+                        key   = { _, app -> app.packageName }
+                    ) { index, app ->
+                        val shape = remember(index, currentAppList.size) {
+                            getGroupShape(index, currentAppList.size)
+                        }
+                        AssistantAppRadioCard(
+                            app             = app,
+                            shape           = shape,
+                            selected        = app.packageName == selectedPackage,
+                            onSelect        = {
+                                context.startActivity(
+                                    Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                )
+                                Toast.makeText(
+                                    context,
+                                    "Select \"${app.name}\" as your default assistant",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            },
+                            onOpenApp       = { onAppClick(app.packageName) },
+                            showPackageName = showPackageName
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -206,7 +262,7 @@ fun AssistantChooserScreen(
         }
     }
 
-    // Filter Bottom Sheet
+    // ── Filter Bottom Sheet ───────────────────────────────────────────────────
     if (showFilterDialog) {
         ModalBottomSheet(
             onDismissRequest = { showFilterDialog = false },
@@ -256,14 +312,13 @@ fun AssistantChooserScreen(
         }
     }
 
-    // Custom App Picker Bottom Sheet
+    // ── Custom App Picker Bottom Sheet ────────────────────────────────────────
     if (showCustomAppPicker) {
         CustomAppPickerBottomSheet(
             allApps          = allApps,
-            selectedPackages = customAppPackages,
+            selectedPackages = savedCustomApps.toList(),
             onDismiss        = { showCustomAppPicker = false },
             onConfirm        = { selected ->
-                customAppPackages = selected
                 onSaveCustomApps(selected)
                 onAppFilterModeChange(AppFilterMode.CUSTOM_APPS)
                 showCustomAppPicker = false
@@ -294,8 +349,8 @@ fun FilterOption(
         shape = shape
     ) {
         Row(
-            modifier            = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-            verticalAlignment   = Alignment.CenterVertically,
+            modifier              = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+            verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(text, color = content, style = MaterialTheme.typography.titleMedium)
@@ -318,8 +373,8 @@ fun CustomAppPickerBottomSheet(
             selectedPackages.forEach { put(it, true) }
         }
     }
-    var searchQuery      by remember { mutableStateOf("") }
-    val focusManager     = LocalFocusManager.current
+    var searchQuery       by remember { mutableStateOf("") }
+    val focusManager      = LocalFocusManager.current
     var isKeyboardVisible by remember { mutableStateOf(false) }
 
     BackHandler(enabled = isKeyboardVisible) {
@@ -334,15 +389,28 @@ fun CustomAppPickerBottomSheet(
         )
     }
 
+    // Pre-convert ALL bitmaps once so LazyColumn items never do it during scroll
+    val imageBitmapCache = remember(initialSorted) {
+        initialSorted.associate { app -> app.packageName to app.iconBitmap.asImageBitmap() }
+    }
+
     val filteredApps = remember(searchQuery, initialSorted) {
         if (searchQuery.isBlank()) initialSorted
         else initialSorted.filter { it.name.contains(searchQuery, ignoreCase = true) }
     }
 
+    // Pre-compute shapes for the current filtered list so items read from a map,
+    // not recalculate, during fast scroll
+    val shapeCache = remember(filteredApps) {
+        filteredApps.indices.associate { index ->
+            filteredApps[index].packageName to getGroupShape(index, filteredApps.size)
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState       = sheetState,
-        containerColor   = MaterialTheme.colorScheme.surface,
+        containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier         = Modifier.fillMaxSize(),
         dragHandle       = {
             Column(Modifier.padding(top = 40.dp)) { BottomSheetDefaults.DragHandle() }
@@ -350,7 +418,7 @@ fun CustomAppPickerBottomSheet(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 topBar = {
                     Column {
                         Row(
@@ -367,9 +435,9 @@ fun CustomAppPickerBottomSheet(
                             )
                         }
                         TextField(
-                            value       = searchQuery,
+                            value         = searchQuery,
                             onValueChange = { searchQuery = it; isKeyboardVisible = true },
-                            modifier    = Modifier
+                            modifier      = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                                 .onFocusChanged { isKeyboardVisible = it.isFocused },
@@ -382,9 +450,9 @@ fun CustomAppPickerBottomSheet(
                                     }
                                 }
                             },
-                            singleLine    = true,
-                            shape         = RoundedCornerShape(32.dp),
-                            colors        = TextFieldDefaults.colors(
+                            singleLine      = true,
+                            shape           = RoundedCornerShape(32.dp),
+                            colors          = TextFieldDefaults.colors(
                                 focusedIndicatorColor   = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
                             ),
@@ -406,25 +474,28 @@ fun CustomAppPickerBottomSheet(
                 }
             ) { innerPadding ->
                 LazyColumn(
-                    modifier       = Modifier.padding(innerPadding).padding(horizontal = 14.dp),
-                    contentPadding = PaddingValues(bottom = 100.dp, top = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier            = Modifier.padding(innerPadding).padding(horizontal = 14.dp),
+                    contentPadding      = PaddingValues(bottom = 100.dp, top = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     items(
                         count = filteredApps.size,
                         key   = { filteredApps[it].packageName }
                     ) { index ->
-                        val app = filteredApps[index]
+                        val app        = filteredApps[index]
+                        val shape      = shapeCache[app.packageName] ?: getGroupShape(index, filteredApps.size)
+                        val imageBitmap = imageBitmapCache[app.packageName]
+
                         Row(
                             Modifier
                                 .fillMaxWidth()
-                                .clip(CircleShape)
+                                .clip(shape)
                                 .clickable {
                                     selectedApps[app.packageName] = !(selectedApps[app.packageName] ?: false)
                                 }
                                 .background(
-                                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                                    shape = CircleShape
+                                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    shape = shape
                                 )
                                 .padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -433,11 +504,15 @@ fun CustomAppPickerBottomSheet(
                                 checked         = selectedApps[app.packageName] ?: false,
                                 onCheckedChange = { selectedApps[app.packageName] = it }
                             )
-                            Image(
-                                bitmap             = remember(app.packageName) { app.iconBitmap.asImageBitmap() },
-                                contentDescription = app.name,
-                                modifier           = Modifier.size(36.dp).clip(CircleShape)
-                            )
+                            if (imageBitmap != null) {
+                                Image(
+                                    bitmap             = imageBitmap,
+                                    contentDescription = app.name,
+                                    modifier           = Modifier.size(36.dp).clip(CircleShape)
+                                )
+                            } else {
+                                Spacer(Modifier.size(36.dp))
+                            }
                             Spacer(Modifier.width(16.dp))
                             Text(text = app.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
@@ -455,8 +530,8 @@ fun CustomAppPickerBottomSheet(
                         brush = androidx.compose.ui.graphics.Brush.verticalGradient(
                             listOf(
                                 Color.Transparent,
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                                MaterialTheme.colorScheme.surface
+                                MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
+                                MaterialTheme.colorScheme.surfaceContainerHigh
                             )
                         )
                     )
@@ -487,7 +562,6 @@ fun AssistantAppRadioCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier          = Modifier.padding(16.dp)
         ) {
-            // Left area — clip to rounded shape so ripple respects the corners
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -524,7 +598,6 @@ fun AssistantAppRadioCard(
                     }
                 }
             }
-            // RadioButton handles its own clipped ripple natively
             RadioButton(
                 selected = selected,
                 onClick  = {
