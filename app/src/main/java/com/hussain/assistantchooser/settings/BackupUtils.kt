@@ -13,8 +13,7 @@ object BackupUtils {
     fun createExportJson(
         context: Context,
         exportCustomApps: Boolean,
-        exportAppSettings: Boolean,
-        exportGlobalSettings: Boolean
+        exportSettings: Boolean
     ): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val root = JSONObject()
@@ -27,7 +26,7 @@ object BackupUtils {
             root.put(KEY_CUSTOM_APPS, JSONArray(customApps.toList()))
         }
 
-        if (exportAppSettings) {
+        if (exportSettings) {
             val appSettings = JSONObject().apply {
                 put(KEY_OPEN_APP, prefs.getBoolean(KEY_OPEN_APP, false))
                 put(KEY_CLOSE_AFTER_LAUNCH, prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true))
@@ -35,9 +34,7 @@ object BackupUtils {
                 put(KEY_SHOW_APP_NAME, prefs.getBoolean(KEY_SHOW_APP_NAME, true))
             }
             root.put("app_settings", appSettings)
-        }
 
-        if (exportGlobalSettings) {
             val globalSettings = JSONObject().apply {
                 put(KEY_APP_FILTER_MODE, prefs.getString(KEY_APP_FILTER_MODE, AppFilterMode.VOICE_ASSISTANTS.name))
                 put(KEY_OVERLAY_SOURCE, prefs.getString(KEY_OVERLAY_SOURCE, OverlaySource.ASSISTANT_APPS.name))

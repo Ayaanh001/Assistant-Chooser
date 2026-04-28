@@ -88,7 +88,6 @@ class SettingsActivity : ComponentActivity() {
                             pendingExportJson = BackupUtils.createExportJson(
                                 this@SettingsActivity,
                                 exportCustom,
-                                exportSettings,
                                 exportSettings
                             )
                             val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
