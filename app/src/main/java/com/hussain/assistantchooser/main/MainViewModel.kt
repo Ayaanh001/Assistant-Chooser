@@ -2,6 +2,7 @@ package com.hussain.assistantchooser.main
 
 import android.app.Application
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hussain.assistantchooser.core.AppCache
@@ -32,7 +33,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val savedCustomApps: StateFlow<Set<String>> = _savedCustomApps.asStateFlow()
 
+    private val preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+        if (key == KEY_CUSTOM_APPS) {
+            _savedCustomApps.value = sharedPreferences.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet()
+        }
+    }
+
     init {
+        prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener)
         AppCache.state
             .onEach { cache ->
                 if (cache.isReady) {
@@ -42,6 +50,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        prefs.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener)
     }
 
     fun saveCustomApps(packages: List<String>) {

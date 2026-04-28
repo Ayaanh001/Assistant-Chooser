@@ -2,6 +2,9 @@ package com.hussain.assistantchooser.settings
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +31,7 @@ import com.hussain.assistantchooser.ui.components.GroupSurface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.InputStreamReader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +46,8 @@ fun SettingsScreen(
     onToggleShowPackageName: (Boolean) -> Unit,
     onOverlaySourceChange: (OverlaySource) -> Unit,
     onToggleShowAppName: (Boolean) -> Unit,
+    onExport: (exportCustomApps: Boolean, exportSettings: Boolean) -> Unit,
+    onImport: (String) -> Unit,
     onBack: () -> Unit
 ) {
     val context       = LocalContext.current
@@ -49,13 +56,77 @@ fun SettingsScreen(
     var showPkg       by remember { mutableStateOf(initialShowPackage) }
     var overlaySource by remember { mutableStateOf(initialOverlaySrc) }
     var showAppName   by remember { mutableStateOf(initialShowAppName) }
+
+    // Sync state when props change (e.g. after import)
+    LaunchedEffect(initialOpenApp) { openApp = initialOpenApp }
+    LaunchedEffect(initialCloseAfter) { closeAfter = initialCloseAfter }
+    LaunchedEffect(initialShowPackage) { showPkg = initialShowPackage }
+    LaunchedEffect(initialOverlaySrc) { overlaySource = initialOverlaySrc }
+    LaunchedEffect(initialShowAppName) { showAppName = initialShowAppName }
+
     var showSrcSheet  by remember { mutableStateOf(false) }
     var showChangelog by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
+
+    var exportCustom   by remember { mutableStateOf(true) }
+    var exportSettings by remember { mutableStateOf(true) }
 
     val currentVersion = BuildConfig.VERSION_NAME
     var loading        by remember { mutableStateOf(false) }
     val snackbarState  = remember { SnackbarHostState() }
     val scope          = rememberCoroutineScope()
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            runCatching {
+                context.contentResolver.openInputStream(it)?.use { stream ->
+                    val json = InputStreamReader(stream).readText()
+                    onImport(json)
+                }
+            }.onFailure {
+                Toast.makeText(context, "Failed to import settings", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    if (showExportDialog) {
+        AlertDialog(
+            onDismissRequest = { showExportDialog = false },
+            title   = { Text("Export Settings") },
+            text    = {
+                Column {
+                    Text("Select what to export:", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(16.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = exportCustom, onCheckedChange = { exportCustom = it })
+                        Text("Custom App List", modifier = Modifier.clickable { exportCustom = !exportCustom })
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = exportSettings, onCheckedChange = { exportSettings = it })
+                        Text("Global Settings & Toggles", modifier = Modifier.clickable { exportSettings = !exportSettings })
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onExport(exportCustom, exportSettings)
+                        showExportDialog = false
+                    },
+                    enabled = exportCustom || exportSettings
+                ) {
+                    Text("Export")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExportDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     // Overlay source bottom sheet
     if (showSrcSheet) {
@@ -166,6 +237,7 @@ fun SettingsScreen(
                     when (index) {
                         0 -> SettingTile(
                             icon            = Icons.Default.Label,
+                            iconColor       = Color(0xFF4285F4),
                             title           = "Show package names",
                             subtitle        = "Show the app's package name below each app",
                             checked         = showPkg,
@@ -178,6 +250,7 @@ fun SettingsScreen(
                         )
                         1 -> SettingTile(
                             icon            = Icons.Default.Apps,
+                            iconColor       = Color(0xFF34A853),
                             title           = "Open App",
                             subtitle        = "Tap an app to open it instead of its voice assistant",
                             checked         = openApp,
@@ -190,6 +263,7 @@ fun SettingsScreen(
                         )
                         2 -> SettingTile(
                             icon            = Icons.Default.ExitToApp,
+                            iconColor       = Color(0xFFEA4335),
                             title           = "Auto close after launch",
                             subtitle        = "Close Assistant Chooser after opening another app",
                             checked         = closeAfter,
@@ -210,12 +284,14 @@ fun SettingsScreen(
                 GroupSurface(count = 2) { index, shape ->
                     when (index) {
                         0 -> OverlaySourceTile(
+                            iconColor     = Color(0xFF673AB7),
                             overlaySource = overlaySource,
                             shape         = shape,
                             onClick       = { showSrcSheet = true }
                         )
                         1 -> SettingTile(
                             icon            = Icons.Default.Visibility,
+                            iconColor       = Color(0xFF00BCD4),
                             title           = "Show app names",
                             subtitle        = "Display app name below each icon in overlay",
                             checked         = showAppName,
@@ -230,15 +306,42 @@ fun SettingsScreen(
                 }
             }
 
+            // Backup & Restore
+            item {
+                SectionLabel("Backup & Restore")
+                GroupSurface(count = 2) { index, shape ->
+                    when (index) {
+                        0 -> ClickableTile(
+                            icon      = Icons.Default.FileUpload,
+                            iconColor = Color(0xFF2196F3),
+                            title     = "Export Settings",
+                            subtitle  = "Save your configurations to a file",
+                            onClick   = { showExportDialog = true },
+                            shape     = shape
+                        )
+                        1 -> ClickableTile(
+                            icon      = Icons.Default.FileDownload,
+                            iconColor = Color(0xFF8BC34A),
+                            title     = "Import Settings",
+                            subtitle  = "Restore configurations from a file",
+                            onClick   = { importLauncher.launch(arrayOf("*/*")) },
+                            shape     = shape
+                        )
+                    }
+                }
+            }
+
             // About section
             item {
                 SectionLabel("About")
                 GroupSurface(count = 4) { index, shape ->
                     when (index) {
                         0 -> ClickableTile(
-                            title    = "Ayaan Hussain",
-                            subtitle = "Developer",
-                            onClick  = {
+                            icon      = Icons.Default.Person,
+                            iconColor = Color(0xFFFF9800),
+                            title     = "Ayaan Hussain",
+                            subtitle  = "Developer",
+                            onClick   = {
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Ayaanh001"))
                                 )
@@ -246,9 +349,11 @@ fun SettingsScreen(
                             shape = shape
                         )
                         1 -> ClickableTile(
-                            title    = "GitHub",
-                            subtitle = "Source code repository",
-                            onClick  = {
+                            icon      = Icons.Default.Code,
+                            iconColor = Color(0xFF607D8B),
+                            title     = "GitHub",
+                            subtitle  = "Source code repository",
+                            onClick   = {
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW,
                                         Uri.parse("https://github.com/Ayaanh001/Assistant-Chooser"))
@@ -257,8 +362,10 @@ fun SettingsScreen(
                             shape = shape
                         )
                         2 -> ClickableTile(
-                            title    = "Changelog",
-                            subtitle = "See what's new in this version",
+                            icon      = Icons.Default.History,
+                            iconColor = Color(0xFFE91E63),
+                            title     = "Changelog",
+                            subtitle  = "See what's new in this version",
                             onClick  = { showChangelog = true },
                             shape    = shape
                         )
@@ -319,6 +426,7 @@ private fun SectionLabel(text: String) {
 @Composable
 fun SettingTile(
     icon: ImageVector,
+    iconColor: Color = MaterialTheme.colorScheme.primary,
     title: String,
     subtitle: String,
     checked: Boolean,
@@ -340,10 +448,10 @@ fun SettingTile(
         ) {
             Surface(
                 shape    = RoundedCornerShape(12.dp),
-                color    = MaterialTheme.colorScheme.primaryContainer,
+                color    = iconColor.copy(alpha = 0.15f),
                 modifier = Modifier.size(40.dp)
             ) {
-                Icon(icon, null, tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                Icon(icon, null, tint = iconColor,
                     modifier = Modifier.padding(8.dp))
             }
             Spacer(Modifier.width(16.dp))
@@ -372,6 +480,8 @@ fun SettingTile(
 
 @Composable
 fun ClickableTile(
+    icon: ImageVector? = null,
+    iconColor: Color = MaterialTheme.colorScheme.primary,
     title: String,
     subtitle: String,
     onClick: () -> Unit,
@@ -387,6 +497,17 @@ fun ClickableTile(
             verticalAlignment = Alignment.CenterVertically,
             modifier          = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(16.dp)
         ) {
+            if (icon != null) {
+                Surface(
+                    shape    = RoundedCornerShape(12.dp),
+                    color    = iconColor.copy(alpha = 0.15f),
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(icon, null, tint = iconColor,
+                        modifier = Modifier.padding(8.dp))
+                }
+                Spacer(Modifier.width(16.dp))
+            }
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleMedium,
                     overflow = TextOverflow.Ellipsis, maxLines = 1)
@@ -401,6 +522,7 @@ fun ClickableTile(
 
 @Composable
 private fun OverlaySourceTile(
+    iconColor: Color = MaterialTheme.colorScheme.primary,
     overlaySource: OverlaySource,
     shape: RoundedCornerShape,
     onClick: () -> Unit
@@ -417,11 +539,11 @@ private fun OverlaySourceTile(
         ) {
             Surface(
                 shape    = RoundedCornerShape(12.dp),
-                color    = MaterialTheme.colorScheme.primaryContainer,
+                color    = iconColor.copy(alpha = 0.15f),
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(Icons.Default.GridView, null,
-                    tint     = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tint     = iconColor,
                     modifier = Modifier.padding(8.dp))
             }
             Spacer(Modifier.width(16.dp))
