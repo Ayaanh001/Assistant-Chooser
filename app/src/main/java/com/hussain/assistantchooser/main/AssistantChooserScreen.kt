@@ -208,7 +208,7 @@ fun AssistantChooserScreen(
                 ) {
                     if (isLoading) {
                         item {
-                            SkeletonList(count = 6, showPackageName = showPackageName)
+                            SkeletonList(count = 7, showPackageName = showPackageName)
                         }
                     }
                     itemsIndexed(
