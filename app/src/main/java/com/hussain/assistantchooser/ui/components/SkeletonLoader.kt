@@ -130,7 +130,7 @@ private fun SkeletonCard(
  */
 @Composable
 fun SkeletonList(
-    count: Int = 6,
+    count: Int = 7,
     showPackageName: Boolean = true
 ) {
     val shimmer = shimmerBrush()
