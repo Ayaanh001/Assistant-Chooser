@@ -117,135 +117,158 @@ fun AssistantOverlayScreen(
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .padding(top = 20.dp, bottom = 20.dp)
-            ) {
-                // Header
-                Row(
-                    modifier          = Modifier
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Header (Title and Buttons)
+                Box(
+                    modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 6.dp, bottom = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .padding(horizontal = 18.dp)
+                        .padding(top = 20.dp, bottom = 12.dp)
                 ) {
-                    Text(
-                        text       = title,
-                        style      = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color      = MaterialTheme.colorScheme.onSurface,
-                        modifier   = Modifier.weight(1f)
-                    )
-
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment     = Alignment.CenterVertically
+                        modifier          = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (isCustomMode) {
+                        Text(
+                            text       = title,
+                            style      = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = MaterialTheme.colorScheme.onSurface,
+                            modifier   = Modifier.weight(1f)
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            if (isCustomMode) {
+                                Box(
+                                    modifier = Modifier
+                                        .height(38.dp)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication        = ripple(),
+                                            onClick           = {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                showPicker = true
+                                            }
+                                        )
+                                        .padding(horizontal = 14.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector        = Icons.Default.Add,
+                                        contentDescription = "Add apps",
+                                        modifier           = Modifier.size(18.dp),
+                                        tint               = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+
                             Box(
                                 modifier = Modifier
                                     .height(38.dp)
                                     .clip(RoundedCornerShape(50))
-                                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                                    .background(MaterialTheme.colorScheme.tertiaryContainer)
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication        = ripple(),
                                         onClick           = {
                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            showPicker = true
+                                            onOpenApp()
                                         }
                                     )
                                     .padding(horizontal = 14.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector        = Icons.Default.Add,
-                                    contentDescription = "Add apps",
+                                    imageVector        = Icons.Default.OpenInNew,
+                                    contentDescription = "Open Assistant Chooser",
                                     modifier           = Modifier.size(18.dp),
-                                    tint               = MaterialTheme.colorScheme.onSecondaryContainer
+                                    tint               = MaterialTheme.colorScheme.onTertiaryContainer
                                 )
                             }
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .height(38.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication        = ripple(),
-                                    onClick           = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        onOpenApp()
-                                    }
-                                )
-                                .padding(horizontal = 14.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector        = Icons.Default.OpenInNew,
-                                contentDescription = "Open Assistant Chooser",
-                                modifier           = Modifier.size(18.dp),
-                                tint               = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
                         }
                     }
                 }
 
-                // Content
-                when {
-                    isLoading -> {
-                        SkeletonOverlayGrid(
-                            count       = 8,
-                            showAppName = showAppName
-                        )
-                    }
-
-                    apps.isEmpty() && isCustomMode -> {
-                        Text(
-                            text      = "No custom apps selected.\nTap + to build your list.",
-                            style     = MaterialTheme.typography.bodyMedium,
-                            color     = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier  = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp)
-                        )
-                    }
-
-                    apps.isEmpty() -> {
-                        Text(
-                            text      = "No apps found.\nConfigure your list in settings.",
-                            style     = MaterialTheme.typography.bodyMedium,
-                            color     = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier  = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp)
-                        )
-                    }
-
-                    else -> {
-                        LazyVerticalGrid(
-                            columns               = GridCells.Fixed(4),
-                            modifier              = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 360.dp),
-                            contentPadding        = PaddingValues(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalArrangement   = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(items = apps, key = { it.packageName }) { app ->
-                                AppIconItem(
-                                    app         = app,
-                                    showAppName = showAppName,
-                                    haptic      = haptic,
-                                    onClick     = {
-                                        if (app.packageName == OWN_PACKAGE) onOpenApp()
-                                        else onAppClick(app.packageName)
-                                    }
+                // Content (Apps Grid)
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
+                        .shadow(
+                            elevation    = 6.dp,
+                            shape        = RoundedCornerShape(24.dp),
+                            clip         = false,
+                            ambientColor = Color.Black.copy(alpha = 0.4f),
+                            spotColor    = Color.Black.copy(alpha = 0.4f)
+                        ),
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp)
+                            .padding(top = 14.dp, bottom = 14.dp)
+                    ) {
+                        when {
+                            isLoading -> {
+                                SkeletonOverlayGrid(
+                                    count       = 8,
+                                    showAppName = showAppName
                                 )
+                            }
+
+                            apps.isEmpty() && isCustomMode -> {
+                                Text(
+                                    text      = "No custom apps selected.\nTap + to build your list.",
+                                    style     = MaterialTheme.typography.bodyMedium,
+                                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier  = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 24.dp)
+                                )
+                            }
+
+                            apps.isEmpty() -> {
+                                Text(
+                                    text      = "No apps found.\nConfigure your list in settings.",
+                                    style     = MaterialTheme.typography.bodyMedium,
+                                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier  = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 24.dp)
+                                )
+                            }
+
+                            else -> {
+                                LazyVerticalGrid(
+                                    columns               = GridCells.Fixed(4),
+                                    modifier              = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 360.dp),
+                                    contentPadding        = PaddingValues(vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalArrangement   = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    items(items = apps, key = { it.packageName }) { app ->
+                                        AppIconItem(
+                                            app         = app,
+                                            showAppName = showAppName,
+                                            haptic      = haptic,
+                                            onClick     = {
+                                                if (app.packageName == OWN_PACKAGE) onOpenApp()
+                                                else onAppClick(app.packageName)
+                                            }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
