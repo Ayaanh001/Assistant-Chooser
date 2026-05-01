@@ -119,7 +119,7 @@ fun AssistantChooserScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
                 HorizontalDivider(
-                    color     = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    color     = MaterialTheme.colorScheme.outlineVariant,
                     thickness = 1.dp
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -250,6 +250,12 @@ fun AssistantChooserScreen(
                     )
                 },
                 colors   = ButtonDefaults.filledTonalButtonColors(),
+                //Brighter color
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+//                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+//                ),
+//
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape    = RoundedCornerShape(28.dp)
             ) {
@@ -555,8 +561,8 @@ fun AssistantAppRadioCard(
     Surface(
         modifier       = Modifier.fillMaxWidth(),
         shape          = shape,
-        color          = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp
+        color          = MaterialTheme.colorScheme.surfaceContainer,
+//        tonalElevation = 3.dp
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
