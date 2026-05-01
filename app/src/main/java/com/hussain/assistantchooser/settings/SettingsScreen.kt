@@ -5,6 +5,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +13,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,12 +22,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.hussain.assistantchooser.BuildConfig
+import com.hussain.assistantchooser.R
 import com.hussain.assistantchooser.core.OverlaySource
 import com.hussain.assistantchooser.ui.components.ChangelogBottomSheet
 import com.hussain.assistantchooser.ui.components.GroupSurface
@@ -76,6 +83,8 @@ fun SettingsScreen(
     val snackbarState  = remember { SnackbarHostState() }
     val scope          = rememberCoroutineScope()
 
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
@@ -91,6 +100,7 @@ fun SettingsScreen(
         }
     }
 
+    // --- Popups (Sheet and Dialogs) ---
     if (showExportDialog) {
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
@@ -128,20 +138,21 @@ fun SettingsScreen(
         )
     }
 
-    // Overlay source bottom sheet
+    //overlay sheet
     if (showSrcSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSrcSheet = false },
-            sheetState       = rememberModalBottomSheetState(),
+            sheetState       = sheetState,
             containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor     = MaterialTheme.colorScheme.onSurface,
-            dragHandle       = { BottomSheetDefaults.DragHandle() }
+            dragHandle       = { BottomSheetDefaults.DragHandle() },
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .navigationBarsPadding() // Pushes content above the nav bar
                     .padding(horizontal = 24.dp)
-                    .padding(bottom = 48.dp)
+                    .padding(top = 8.dp, bottom = 48.dp)
             ) {
                 Text(
                     text       = "Overlay App Source",
@@ -167,6 +178,7 @@ fun SettingsScreen(
                             selected    = overlaySource == OverlaySource.ASSISTANT_APPS,
                             shape       = shape,
                             onClick     = {
+                                performHapticFeedback(context)
                                 overlaySource = OverlaySource.ASSISTANT_APPS
                                 onOverlaySourceChange(OverlaySource.ASSISTANT_APPS)
                                 showSrcSheet = false
@@ -178,6 +190,7 @@ fun SettingsScreen(
                             selected    = overlaySource == OverlaySource.CUSTOM_APPS,
                             shape       = shape,
                             onClick     = {
+                                performHapticFeedback(context)
                                 overlaySource = OverlaySource.CUSTOM_APPS
                                 onOverlaySourceChange(OverlaySource.CUSTOM_APPS)
                                 showSrcSheet = false
@@ -193,6 +206,7 @@ fun SettingsScreen(
         ChangelogBottomSheet(onDismiss = { showChangelog = false })
     }
 
+    // --- Main Screen ---
     Scaffold(
         topBar = {
             TopAppBar(
@@ -236,7 +250,7 @@ fun SettingsScreen(
                 GroupSurface(count = 3) { index, shape ->
                     when (index) {
                         0 -> SettingTile(
-                            icon            = Icons.Default.Label,
+                            icon            = Icons.AutoMirrored.Filled.Label,
                             iconColor       = Color(0xFF4285F4),
                             title           = "Show package names",
                             subtitle        = "Show the app's package name below each app",
@@ -262,7 +276,7 @@ fun SettingsScreen(
                             shape = shape
                         )
                         2 -> SettingTile(
-                            icon            = Icons.Default.ExitToApp,
+                            icon            = Icons.AutoMirrored.Filled.ExitToApp,
                             iconColor       = Color(0xFFEA4335),
                             title           = "Auto close after launch",
                             subtitle        = "Close Assistant Chooser after opening another app",
@@ -287,7 +301,10 @@ fun SettingsScreen(
                             iconColor     = Color(0xFF673AB7),
                             overlaySource = overlaySource,
                             shape         = shape,
-                            onClick       = { showSrcSheet = true }
+                            onClick       = { 
+                                performHapticFeedback(context)
+                                showSrcSheet = true 
+                            }
                         )
                         1 -> SettingTile(
                             icon            = Icons.Default.Visibility,
@@ -316,7 +333,10 @@ fun SettingsScreen(
                             iconColor = Color(0xFF2196F3),
                             title     = "Export Settings",
                             subtitle  = "Save your configurations to a file",
-                            onClick   = { showExportDialog = true },
+                            onClick   = { 
+                                performHapticFeedback(context)
+                                showExportDialog = true 
+                            },
                             shape     = shape
                         )
                         1 -> ClickableTile(
@@ -324,7 +344,10 @@ fun SettingsScreen(
                             iconColor = Color(0xFF8BC34A),
                             title     = "Import Settings",
                             subtitle  = "Restore configurations from a file",
-                            onClick   = { importLauncher.launch(arrayOf("*/*")) },
+                            onClick   = { 
+                                performHapticFeedback(context)
+                                importLauncher.launch(arrayOf("*/*")) 
+                            },
                             shape     = shape
                         )
                     }
@@ -337,11 +360,11 @@ fun SettingsScreen(
                 GroupSurface(count = 4) { index, shape ->
                     when (index) {
                         0 -> ClickableTile(
-                            icon      = Icons.Default.Person,
-                            iconColor = Color(0xFFFF9800),
+                            painter   = painterResource(R.drawable.ah_logo),
                             title     = "Ayaan Hussain",
                             subtitle  = "Developer",
                             onClick   = {
+                                performHapticFeedback(context)
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Ayaanh001"))
                                 )
@@ -349,11 +372,11 @@ fun SettingsScreen(
                             shape = shape
                         )
                         1 -> ClickableTile(
-                            icon      = Icons.Default.Code,
-                            iconColor = Color(0xFF607D8B),
+                            painter   = painterResource(R.drawable.ic_github),
                             title     = "GitHub",
                             subtitle  = "Source code repository",
                             onClick   = {
+                                performHapticFeedback(context)
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW,
                                         Uri.parse("https://github.com/Ayaanh001/Assistant-Chooser"))
@@ -366,7 +389,10 @@ fun SettingsScreen(
                             iconColor = Color(0xFFE91E63),
                             title     = "Changelog",
                             subtitle  = "See what's new in this version",
-                            onClick  = { showChangelog = true },
+                            onClick  = { 
+                                performHapticFeedback(context)
+                                showChangelog = true 
+                            },
                             shape    = shape
                         )
                         3 -> VersionTile(
@@ -374,6 +400,7 @@ fun SettingsScreen(
                             loading        = loading,
                             shape          = shape,
                             onCheckUpdate  = {
+                                performHapticFeedback(context)
                                 loading = true
                                 scope.launch(Dispatchers.IO) {
                                     val latest = checkLatestVersionFromGitHub("Ayaanh001", "Assistant-Chooser")
@@ -436,7 +463,7 @@ fun SettingTile(
     Surface(
         modifier       = Modifier.fillMaxWidth(),
         shape          = shape,
-        color          = MaterialTheme.colorScheme.surface,
+        color          = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 3.dp
     ) {
         Row(
@@ -481,6 +508,7 @@ fun SettingTile(
 @Composable
 fun ClickableTile(
     icon: ImageVector? = null,
+    painter: Painter? = null,
     iconColor: Color = MaterialTheme.colorScheme.primary,
     title: String,
     subtitle: String,
@@ -490,21 +518,30 @@ fun ClickableTile(
     Surface(
         modifier       = Modifier.fillMaxWidth(),
         shape          = shape,
-        color          = MaterialTheme.colorScheme.surface,
+        color          = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 3.dp
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier          = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(16.dp)
         ) {
-            if (icon != null) {
+            if (icon != null || painter != null) {
                 Surface(
                     shape    = RoundedCornerShape(12.dp),
-                    color    = iconColor.copy(alpha = 0.15f),
+                    color    = if (painter != null) Color.Transparent else iconColor.copy(alpha = 0.15f),
                     modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(icon, null, tint = iconColor,
-                        modifier = Modifier.padding(8.dp))
+                    if (painter != null) {
+                        Image(
+                            painter = painter,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else if (icon != null) {
+                        Icon(icon, null, tint = iconColor,
+                            modifier = Modifier.padding(8.dp))
+                    }
                 }
                 Spacer(Modifier.width(16.dp))
             }
@@ -530,7 +567,7 @@ private fun OverlaySourceTile(
     Surface(
         modifier       = Modifier.fillMaxWidth(),
         shape          = shape,
-        color          = MaterialTheme.colorScheme.surface,
+        color          = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 3.dp
     ) {
         Row(
@@ -558,13 +595,14 @@ private fun OverlaySourceTile(
                 Spacer(Modifier.height(8.dp))
                 Surface(
                     shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.secondaryContainer
+                    color = MaterialTheme.colorScheme.surfaceContainerLowest
                 ) {
                     Text(
                         text     = if (overlaySource == OverlaySource.ASSISTANT_APPS) "Assistant Apps" else "Custom Apps",
-                        style    = MaterialTheme.typography.labelMedium,
-                        color    = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
                 }
             }
@@ -584,7 +622,7 @@ private fun VersionTile(
     Surface(
         modifier       = Modifier.fillMaxWidth(),
         shape          = shape,
-        color          = MaterialTheme.colorScheme.surface,
+        color          = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 3.dp
     ) {
         Row(
@@ -648,7 +686,7 @@ fun OverlaySourceOption(
                 Text(title, style = MaterialTheme.typography.titleMedium,
                     color = contentColor, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(2.dp))
-                Text(description, style = MaterialTheme.typography.bodySmall,
+                Text(description, style = MaterialTheme.typography.bodyMedium,
                     color = if (selected)
                         MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f)
                     else
