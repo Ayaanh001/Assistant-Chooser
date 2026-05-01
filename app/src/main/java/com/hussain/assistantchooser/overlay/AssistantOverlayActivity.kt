@@ -9,8 +9,7 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hussain.assistantchooser.core.KEY_SHOW_APP_NAME
-import com.hussain.assistantchooser.core.PREFS_NAME
+import com.hussain.assistantchooser.core.*
 import com.hussain.assistantchooser.data.launchAssistantForPackage
 import com.hussain.assistantchooser.main.MainActivity
 import com.hussain.assistantchooser.ui.theme.AssistantChooserTheme
@@ -24,8 +23,10 @@ class AssistantOverlayActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.setBackgroundDrawableResource(android.R.color.transparent)
 
-        val prefs       = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs      = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val showAppName = prefs.getBoolean(KEY_SHOW_APP_NAME, true)
+        val openApp    = prefs.getBoolean(KEY_OPEN_APP, false)
+        val closeAfter = prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)
 
         setContent {
             AssistantChooserTheme(transparentBackground = true) {
@@ -42,7 +43,20 @@ class AssistantOverlayActivity : ComponentActivity() {
                     allApps             = allApps,
                     savedCustomPackages = savedCustomPackages,
                     showAppName         = showAppName,
-                    onAppClick          = { pkg -> launchAssistantForPackage(this, pkg); finish() },
+                    onAppClick          = { pkg ->
+                        if (openApp) {
+                            runCatching {
+                                val launch = packageManager.getLaunchIntentForPackage(pkg)
+                                if (launch != null) {
+                                    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    startActivity(launch)
+                                } else launchAssistantForPackage(this, pkg)
+                            }.onFailure { launchAssistantForPackage(this, pkg) }
+                        } else {
+                            launchAssistantForPackage(this, pkg)
+                        }
+                        if (closeAfter) finish()
+                    },
                     onDismiss           = { finish() },
                     onOpenApp           = { openFullApp() },
                     onSaveCustomApps    = { viewModel.saveCustomApps(it) },
