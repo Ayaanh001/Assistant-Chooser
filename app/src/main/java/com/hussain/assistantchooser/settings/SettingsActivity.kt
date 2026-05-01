@@ -90,8 +90,8 @@ class SettingsActivity : ComponentActivity() {
                                 exportCustom,
                                 exportSettings
                             )
-                            val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                            val fileName = "Assistant Chooser Backup $date.ac"
+                            val timestamp = SimpleDateFormat("yyyy-MM-dd HHmmss", Locale.getDefault()).format(Date())
+                            val fileName = "Assistant Chooser Backup $timestamp.ac"
                             createDocumentLauncher.launch(fileName)
                         },
                         onImport = { json ->
