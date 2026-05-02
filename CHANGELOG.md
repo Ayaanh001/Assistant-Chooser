@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4] - 02-05-2026
+
+### Added
+- Backup feature to export/import custom apps list and app settings
+- Option to open overlay using Quick Settings tile
+- Empty screen UI for custom apps filter
+
+### Changed & Improved
+- Refactored Settings screen UI for a cleaner and more organized look
+- Improved Overlay UI and animations for a smoother experience
+- Updated app color palette
+- Improved 'Choose Apps' picker bottom sheet UI
+- Polished GroupSurface logic and skeleton loading placeholders
+
+### Fixed
+- Fixed overlay launching behavior to respect 'Open App' setting correctly
+
+---
+
 ## [1.3] - 28-02-2026
 
 ### Added
