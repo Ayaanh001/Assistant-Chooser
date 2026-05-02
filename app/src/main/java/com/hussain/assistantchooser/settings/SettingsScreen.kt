@@ -304,9 +304,9 @@ fun SettingsScreen(
                             iconColor     = Color(0xFF673AB7),
                             overlaySource = overlaySource,
                             shape         = shape,
-                            onClick       = { 
+                            onClick       = {
                                 performHapticFeedback(context)
-                                showSrcSheet = true 
+                                showSrcSheet = true
                             }
                         )
                         1 -> SettingTile(
@@ -349,9 +349,9 @@ fun SettingsScreen(
                             iconColor = Color(0xFF2196F3),
                             title     = "Export Settings",
                             subtitle  = "Save your configurations to a file",
-                            onClick   = { 
+                            onClick   = {
                                 performHapticFeedback(context)
-                                showExportDialog = true 
+                                showExportDialog = true
                             },
                             shape     = shape
                         )
@@ -360,9 +360,9 @@ fun SettingsScreen(
                             iconColor = Color(0xFF8BC34A),
                             title     = "Import Settings",
                             subtitle  = "Restore configurations from a file",
-                            onClick   = { 
+                            onClick   = {
                                 performHapticFeedback(context)
-                                importLauncher.launch(arrayOf("*/*")) 
+                                importLauncher.launch(arrayOf("*/*"))
                             },
                             shape     = shape
                         )
@@ -419,9 +419,9 @@ fun SettingsScreen(
                             iconColor = Color(0xFFE91E63),
                             title     = "Changelog",
                             subtitle  = "See what's new in this version",
-                            onClick  = { 
+                            onClick  = {
                                 performHapticFeedback(context)
-                                showChangelog = true 
+                                showChangelog = true
                             },
                             shape    = shape
                         )
@@ -463,6 +463,10 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    if (showChangelog) {
+        ChangelogBottomSheet(onDismiss = { showChangelog = false })
     }
 }
 
@@ -517,7 +521,6 @@ fun SettingTile(
                     overflow = TextOverflow.Ellipsis, maxLines = 2)
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
                     color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
                     overflow = TextOverflow.Ellipsis, maxLines = 3)
             }
             Spacer(Modifier.width(8.dp))
@@ -581,7 +584,6 @@ fun ClickableTile(
                     overflow = TextOverflow.Ellipsis, maxLines = 1)
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
                     color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
                     overflow = TextOverflow.Ellipsis, maxLines = 1)
             }
         }
@@ -620,8 +622,7 @@ private fun OverlaySourceTile(
                 Text(
                     "Which apps appear when assistant is triggered",
                     style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp)
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(8.dp))
                 Surface(
@@ -665,8 +666,7 @@ private fun VersionTile(
                 Text(
                     currentVersion,
                     style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Button(
@@ -700,9 +700,9 @@ fun OverlaySourceOption(
     onClick: () -> Unit
 ) {
     val bgColor      = if (selected) MaterialTheme.colorScheme.secondaryContainer
-                       else MaterialTheme.colorScheme.surfaceContainerLow
+    else MaterialTheme.colorScheme.surfaceContainerLow
     val contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
-                       else MaterialTheme.colorScheme.onSurface
+    else MaterialTheme.colorScheme.onSurface
 
     Surface(
         modifier = Modifier.fillMaxWidth().clip(shape).clickable(onClick = onClick),
@@ -716,7 +716,6 @@ fun OverlaySourceOption(
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleMedium,
                     color = contentColor, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(2.dp))
                 Text(description, style = MaterialTheme.typography.bodyMedium,
                     color = if (selected)
                         MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f)
@@ -730,7 +729,7 @@ fun OverlaySourceOption(
                 onClick  = onClick,
                 colors   = RadioButtonDefaults.colors(
                     selectedColor   = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
-                                      else MaterialTheme.colorScheme.primary,
+                    else MaterialTheme.colorScheme.primary,
                     unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
