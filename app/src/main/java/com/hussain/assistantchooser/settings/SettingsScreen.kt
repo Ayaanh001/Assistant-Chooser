@@ -464,10 +464,6 @@ fun SettingsScreen(
             }
         }
     }
-
-    if (showChangelog) {
-        ChangelogBottomSheet(onDismiss = { showChangelog = false })
-    }
 }
 
 // ── Section label ─────────────────────────────────────────────────────────────
