@@ -172,7 +172,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             Toast.makeText(
                 this,
-                "Swipe down → tap Edit (pencil) → drag 'Launch Assistant' into active tiles.",
+                "Swipe down → tap Edit (pencil) → drag 'Assistant Chooser' into active tiles.",
                 Toast.LENGTH_LONG
             ).show()
             return
@@ -187,16 +187,12 @@ class MainActivity : ComponentActivity() {
                 java.util.concurrent.Executors.newSingleThreadExecutor()
             ) { result ->
                 runOnUiThread {
-                    val ok = when (result) {
-                        is Int     -> result != 0
-                        is Boolean -> result
-                        else       -> false
+                    val message = when (result) {
+                        StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED -> "Assistant Chooser Tile added to Quick Settings"
+                        StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED -> "Assistant Chooser Tile is already added to Quick Settings"
+                        else -> "Tile add request failed."
                     }
-                    Toast.makeText(
-                        this,
-                        if (ok) "Tile added to Quick Settings" else "Tile add request failed.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
                 }
             }
         } catch (e: Exception) {
