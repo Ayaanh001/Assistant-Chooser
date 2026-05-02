@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -372,7 +373,7 @@ fun SettingsScreen(
             // About section
             item {
                 SectionLabel("About")
-                GroupSurface(count = 4) { index, shape ->
+                GroupSurface(count = 5) { index, shape ->
                     when (index) {
                         0 -> ClickableTile(
                             painter   = painterResource(R.drawable.ah_logo),
@@ -401,6 +402,19 @@ fun SettingsScreen(
                             shape = shape
                         )
                         2 -> ClickableTile(
+                            icon      = ImageVector.vectorResource(R.drawable.telegram),
+                            iconColor = Color(0xFF24A1DE),
+                            title     = "Telegram",
+                            subtitle  = "Join the community",
+                            onClick   = {
+                                performHapticFeedback(context)
+                                context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/Ahacd1"))
+                                )
+                            },
+                            shape = shape
+                        )
+                        3 -> ClickableTile(
                             icon      = Icons.Default.History,
                             iconColor = Color(0xFFE91E63),
                             title     = "Changelog",
@@ -411,7 +425,7 @@ fun SettingsScreen(
                             },
                             shape    = shape
                         )
-                        3 -> VersionTile(
+                        4 -> VersionTile(
                             currentVersion = currentVersion,
                             loading        = loading,
                             shape          = shape,
