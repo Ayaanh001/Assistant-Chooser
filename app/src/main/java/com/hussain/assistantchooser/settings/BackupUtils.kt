@@ -32,6 +32,7 @@ object BackupUtils {
                 put(KEY_CLOSE_AFTER_LAUNCH, prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true))
                 put(KEY_SHOW_PACKAGE_NAME, prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, true))
                 put(KEY_SHOW_APP_NAME, prefs.getBoolean(KEY_SHOW_APP_NAME, true))
+                put(KEY_TILE_OPEN_OVERLAY, prefs.getBoolean(KEY_TILE_OPEN_OVERLAY, true))
             }
             root.put("app_settings", appSettings)
 
@@ -72,6 +73,7 @@ object BackupUtils {
             if (appSettings.has(KEY_CLOSE_AFTER_LAUNCH)) edit.putBoolean(KEY_CLOSE_AFTER_LAUNCH, appSettings.getBoolean(KEY_CLOSE_AFTER_LAUNCH))
             if (appSettings.has(KEY_SHOW_PACKAGE_NAME)) edit.putBoolean(KEY_SHOW_PACKAGE_NAME, appSettings.getBoolean(KEY_SHOW_PACKAGE_NAME))
             if (appSettings.has(KEY_SHOW_APP_NAME)) edit.putBoolean(KEY_SHOW_APP_NAME, appSettings.getBoolean(KEY_SHOW_APP_NAME))
+            if (appSettings.has(KEY_TILE_OPEN_OVERLAY)) edit.putBoolean(KEY_TILE_OPEN_OVERLAY, appSettings.getBoolean(KEY_TILE_OPEN_OVERLAY))
         }
 
         if (root.has("global_settings")) {

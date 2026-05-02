@@ -48,11 +48,13 @@ fun SettingsScreen(
     initialShowPackage: Boolean,
     initialOverlaySrc: OverlaySource,
     initialShowAppName: Boolean,
+    initialTileOpenOverlay: Boolean,
     onToggleOpenApp: (Boolean) -> Unit,
     onToggleCloseAfter: (Boolean) -> Unit,
     onToggleShowPackageName: (Boolean) -> Unit,
     onOverlaySourceChange: (OverlaySource) -> Unit,
     onToggleShowAppName: (Boolean) -> Unit,
+    onToggleTileOpenOverlay: (Boolean) -> Unit,
     onExport: (exportCustomApps: Boolean, exportSettings: Boolean) -> Unit,
     onImport: (String) -> Unit,
     onBack: () -> Unit
@@ -63,6 +65,7 @@ fun SettingsScreen(
     var showPkg       by remember { mutableStateOf(initialShowPackage) }
     var overlaySource by remember { mutableStateOf(initialOverlaySrc) }
     var showAppName   by remember { mutableStateOf(initialShowAppName) }
+    var tileOpenOverlay by remember { mutableStateOf(initialTileOpenOverlay) }
 
     // Sync state when props change (e.g. after import)
     LaunchedEffect(initialOpenApp) { openApp = initialOpenApp }
@@ -70,6 +73,7 @@ fun SettingsScreen(
     LaunchedEffect(initialShowPackage) { showPkg = initialShowPackage }
     LaunchedEffect(initialOverlaySrc) { overlaySource = initialOverlaySrc }
     LaunchedEffect(initialShowAppName) { showAppName = initialShowAppName }
+    LaunchedEffect(initialTileOpenOverlay) { tileOpenOverlay = initialTileOpenOverlay }
 
     var showSrcSheet  by remember { mutableStateOf(false) }
     var showChangelog by remember { mutableStateOf(false) }
@@ -100,7 +104,6 @@ fun SettingsScreen(
         }
     }
 
-    // --- Popups (Sheet and Dialogs) ---
     if (showExportDialog) {
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
@@ -138,7 +141,7 @@ fun SettingsScreen(
         )
     }
 
-    //overlay sheet
+    // Overlay source bottom sheet
     if (showSrcSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSrcSheet = false },
@@ -146,13 +149,13 @@ fun SettingsScreen(
             containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor     = MaterialTheme.colorScheme.onSurface,
             dragHandle       = { BottomSheetDefaults.DragHandle() },
+            contentWindowInsets = { WindowInsets.navigationBars }
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding() // Pushes content above the nav bar
                     .padding(horizontal = 24.dp)
-                    .padding(top = 8.dp, bottom = 48.dp)
+                    .padding(bottom = 48.dp)
             ) {
                 Text(
                     text       = "Overlay App Source",
@@ -206,7 +209,6 @@ fun SettingsScreen(
         ChangelogBottomSheet(onDismiss = { showChangelog = false })
     }
 
-    // --- Main Screen ---
     Scaffold(
         topBar = {
             TopAppBar(
@@ -295,7 +297,7 @@ fun SettingsScreen(
             // Overlay section
             item {
                 SectionLabel("Overlay")
-                GroupSurface(count = 2) { index, shape ->
+                GroupSurface(count = 3) { index, shape ->
                     when (index) {
                         0 -> OverlaySourceTile(
                             iconColor     = Color(0xFF673AB7),
@@ -316,6 +318,19 @@ fun SettingsScreen(
                                 performHapticFeedback(context)
                                 showAppName = it
                                 onToggleShowAppName(it)
+                            },
+                            shape = shape
+                        )
+                        2 -> SettingTile(
+                            icon            = Icons.Default.ToggleOn,
+                            iconColor       = Color(0xFFFF9800),
+                            title           = "Tile opens Overlay",
+                            subtitle        = "Quick settings tile will open overlay instead of main app",
+                            checked         = tileOpenOverlay,
+                            onCheckedChange = {
+                                performHapticFeedback(context)
+                                tileOpenOverlay = it
+                                onToggleTileOpenOverlay(it)
                             },
                             shape = shape
                         )
@@ -373,6 +388,7 @@ fun SettingsScreen(
                         )
                         1 -> ClickableTile(
                             painter   = painterResource(R.drawable.ic_github),
+                            painterContainerColor = Color.Black,
                             title     = "GitHub",
                             subtitle  = "Source code repository",
                             onClick   = {
@@ -510,6 +526,7 @@ fun ClickableTile(
     icon: ImageVector? = null,
     painter: Painter? = null,
     iconColor: Color = MaterialTheme.colorScheme.primary,
+    painterContainerColor: Color = Color.Transparent,
     title: String,
     subtitle: String,
     onClick: () -> Unit,
@@ -528,7 +545,7 @@ fun ClickableTile(
             if (icon != null || painter != null) {
                 Surface(
                     shape    = RoundedCornerShape(12.dp),
-                    color    = if (painter != null) Color.Transparent else iconColor.copy(alpha = 0.15f),
+                    color    = if (painter != null) painterContainerColor else iconColor.copy(alpha = 0.15f),
                     modifier = Modifier.size(40.dp)
                 ) {
                     if (painter != null) {
