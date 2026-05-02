@@ -54,6 +54,7 @@ class SettingsActivity : ComponentActivity() {
                     var closeAfter by remember { mutableStateOf(prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)) }
                     var showPkg by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, true)) }
                     var showAppName by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_APP_NAME, true)) }
+                    var tileOpenOverlay by remember { mutableStateOf(prefs.getBoolean(KEY_TILE_OPEN_OVERLAY, true)) }
                     var overlaySrc by remember {
                         mutableStateOf(OverlaySource.fromString(prefs.getString(KEY_OVERLAY_SOURCE, null)))
                     }
@@ -64,6 +65,7 @@ class SettingsActivity : ComponentActivity() {
                         initialShowPackage          = showPkg,
                         initialShowAppName          = showAppName,
                         initialOverlaySrc           = overlaySrc,
+                        initialTileOpenOverlay      = tileOpenOverlay,
                         onToggleOpenApp             = {
                             openApp = it
                             prefs.edit().putBoolean(KEY_OPEN_APP, it).apply()
@@ -84,6 +86,10 @@ class SettingsActivity : ComponentActivity() {
                             showAppName = it
                             prefs.edit().putBoolean(KEY_SHOW_APP_NAME, it).apply()
                         },
+                        onToggleTileOpenOverlay     = {
+                            tileOpenOverlay = it
+                            prefs.edit().putBoolean(KEY_TILE_OPEN_OVERLAY, it).apply()
+                        },
                         onExport = { exportCustom, exportSettings ->
                             pendingExportJson = BackupUtils.createExportJson(
                                 this@SettingsActivity,
@@ -101,6 +107,7 @@ class SettingsActivity : ComponentActivity() {
                                 closeAfter = prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, closeAfter)
                                 showPkg = prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, showPkg)
                                 showAppName = prefs.getBoolean(KEY_SHOW_APP_NAME, showAppName)
+                                tileOpenOverlay = prefs.getBoolean(KEY_TILE_OPEN_OVERLAY, tileOpenOverlay)
                                 overlaySrc = OverlaySource.fromString(prefs.getString(KEY_OVERLAY_SOURCE, null))
                                 
                                 Toast.makeText(this@SettingsActivity, "Settings imported successfully", Toast.LENGTH_SHORT).show()
