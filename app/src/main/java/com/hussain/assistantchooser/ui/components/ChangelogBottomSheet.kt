@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 data class ACChangelogSection(
@@ -25,6 +26,37 @@ data class ACChangelogVersion(
 )
 
 private val assistantChooserChangelog = listOf(
+
+    ACChangelogVersion(
+        version = "v1.4",
+        date = "02-05-2026",
+        sections = listOf(
+            ACChangelogSection(
+                title = "Added",
+                items = listOf(
+                    "Backup feature to export/import custom apps list and app settings",
+                    "Option to open overlay using Quick Settings tile",
+                    "Empty screen UI for custom apps filter",
+                )
+            ),
+            ACChangelogSection(
+                title = "Changed & Improved",
+                items = listOf(
+                    "Refactored Settings screen UI for a cleaner look",
+                    "Improved Overlay UI and animations",
+                    "Updated app color palette",
+                    "Improved 'Choose Apps' picker bottom sheet UI",
+                    "Polished GroupSurface logic and skeleton loading placeholders"
+                )
+            ),
+            ACChangelogSection(
+                title = "Fixed",
+                items = listOf(
+                    "Fixed overlay launching behavior to respect 'Open App' setting"
+                )
+            )
+        )
+    ),
 
     ACChangelogVersion(
         version = "v1.3",
@@ -180,6 +212,7 @@ private fun VersionItem(version: ACChangelogVersion) {
                     text = version.version,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
@@ -188,7 +221,7 @@ private fun VersionItem(version: ACChangelogVersion) {
 
             Text(
                 text = version.date,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
