@@ -49,6 +49,7 @@ fun AssistantOverlayScreen(
     onOpenApp: () -> Unit,
     onSaveCustomApps: (List<String>) -> Unit,
     showAppName: Boolean,
+    themedIcons: Boolean
 ) {
     val title = when (overlaySource) {
         OverlaySource.ASSISTANT_APPS -> "Voice Assistants"
@@ -261,6 +262,7 @@ fun AssistantOverlayScreen(
                                         AppIconItem(
                                             app         = app,
                                             showAppName = showAppName,
+                                            themedIcons = themedIcons,
                                             haptic      = haptic,
                                             onClick     = {
                                                 if (app.packageName == OWN_PACKAGE) onOpenApp()

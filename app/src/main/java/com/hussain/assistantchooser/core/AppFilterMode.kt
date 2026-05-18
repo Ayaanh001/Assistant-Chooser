@@ -15,3 +15,26 @@ enum class OverlaySource {
             entries.firstOrNull { it.name == value } ?: ASSISTANT_APPS
     }
 }
+
+enum class ThemeMode {
+    AUTO,
+    LIGHT,
+    DARK;
+
+    companion object {
+        fun fromString(value: String?): ThemeMode =
+            entries.firstOrNull { it.name == value } ?: AUTO
+    }
+}
+
+enum class ThemedIconMode {
+    OFF,
+    APP_ONLY,
+    OVERLAY_ONLY,
+    BOTH;
+
+    companion object {
+        fun fromString(value: String?): ThemedIconMode =
+            entries.firstOrNull { it.name == value } ?: OFF
+    }
+}
