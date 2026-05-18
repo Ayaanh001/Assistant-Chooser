@@ -33,16 +33,27 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.toArgb
 import com.hussain.assistantchooser.core.AssistantApp
 
 @Composable
 fun AppIconItem(
     app: AssistantApp,
     showAppName: Boolean,
+    themedIcons: Boolean,
     haptic: HapticFeedback,
     onClick: () -> Unit
 ) {
-    val bitmap            = remember(app.packageName) { app.iconBitmap }
+    val backgroundColor = MaterialTheme.colorScheme.primaryContainer.toArgb()
+    val foregroundColor = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
+
+    val bitmap = remember(app.packageName, themedIcons, backgroundColor, foregroundColor) {
+        if (themedIcons) {
+            app.getThemedIconBitmap(backgroundColor, foregroundColor) ?: app.iconBitmap
+        } else {
+            app.iconBitmap
+        }
+    }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed         by interactionSource.collectIsPressedAsState()
 

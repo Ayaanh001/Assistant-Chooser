@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.toArgb
 import com.hussain.assistantchooser.core.AppFilterMode
 import com.hussain.assistantchooser.core.AssistantApp
 import com.hussain.assistantchooser.ui.components.GroupSurface
@@ -58,6 +59,7 @@ fun AssistantChooserScreen(
     openApp: Boolean,
     closeAfterLaunch: Boolean,
     showPackageName: Boolean,
+    themedIcons: Boolean,
 ) {
     val context = LocalContext.current
     var showFilterDialog    by remember { mutableStateOf(false) }
@@ -222,6 +224,7 @@ fun AssistantChooserScreen(
                             app             = app,
                             shape           = shape,
                             selected        = app.packageName == selectedPackage,
+                            themedIcons     = themedIcons,
                             onSelect        = {
                                 context.startActivity(
                                     Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)
@@ -348,7 +351,7 @@ fun FilterOption(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
+            .height(64.dp)
             .clip(shape)
             .clickable(onClick = onClick),
         color = bg,
@@ -551,11 +554,21 @@ fun AssistantAppRadioCard(
     app: AssistantApp,
     shape: RoundedCornerShape,
     selected: Boolean,
+    themedIcons: Boolean,
     onSelect: () -> Unit,
     onOpenApp: () -> Unit,
     showPackageName: Boolean
 ) {
-    val iconBitmap = remember(app.packageName) { app.iconBitmap.asImageBitmap() }
+    val backgroundColor = MaterialTheme.colorScheme.primaryContainer.toArgb()
+    val foregroundColor = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
+
+    val iconBitmap = remember(app.packageName, themedIcons, backgroundColor, foregroundColor) {
+        if (themedIcons) {
+            (app.getThemedIconBitmap(backgroundColor, foregroundColor) ?: app.iconBitmap).asImageBitmap()
+        } else {
+            app.iconBitmap.asImageBitmap()
+        }
+    }
     val haptic     = LocalHapticFeedback.current
 
     Surface(
@@ -566,7 +579,8 @@ fun AssistantAppRadioCard(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier          = Modifier.padding(16.dp)
+//            modifier          = Modifier.padding(16.dp)
+                    modifier          = Modifier.padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -610,7 +624,7 @@ fun AssistantAppRadioCard(
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onSelect()
                 },
-                modifier = Modifier.padding(start = 8.dp)
+                modifier = Modifier.padding(start = 0.dp)
             )
         }
     }

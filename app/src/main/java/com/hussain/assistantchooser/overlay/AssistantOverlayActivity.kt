@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,12 +30,20 @@ class AssistantOverlayActivity : ComponentActivity() {
         val closeAfter = prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)
 
         setContent {
-            AssistantChooserTheme(transparentBackground = true) {
+            val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val darkTheme = when (themeMode) {
+                ThemeMode.AUTO -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+
+            AssistantChooserTheme(darkTheme = darkTheme, transparentBackground = true) {
                 val apps               by viewModel.apps.collectAsStateWithLifecycle()
                 val isLoading          by viewModel.isLoading.collectAsStateWithLifecycle()
                 val overlaySource      by viewModel.overlaySource.collectAsStateWithLifecycle()
                 val allApps            by viewModel.allApps.collectAsStateWithLifecycle()
                 val savedCustomPackages by viewModel.savedCustomPackages.collectAsStateWithLifecycle()
+                val themedIconMode     by viewModel.themedIconMode.collectAsStateWithLifecycle()
 
                 AssistantOverlayScreen(
                     apps                = apps,
@@ -43,6 +52,7 @@ class AssistantOverlayActivity : ComponentActivity() {
                     allApps             = allApps,
                     savedCustomPackages = savedCustomPackages,
                     showAppName         = showAppName,
+                    themedIcons         = themedIconMode == ThemedIconMode.OVERLAY_ONLY || themedIconMode == ThemedIconMode.BOTH,
                     onAppClick          = { pkg ->
                         if (openApp) {
                             runCatching {

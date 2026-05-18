@@ -5,50 +5,73 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.hussain.assistantchooser.core.AppCache
-import com.hussain.assistantchooser.core.AssistantApp
-import com.hussain.assistantchooser.core.KEY_CUSTOM_APPS
-import com.hussain.assistantchooser.core.PREFS_NAME
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import com.hussain.assistantchooser.core.*
+import kotlinx.coroutines.flow.*
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val _assistantApps = MutableStateFlow<List<AssistantApp>>(emptyList())
-    val assistantApps: StateFlow<List<AssistantApp>> = _assistantApps.asStateFlow()
-
-    private val _allApps = MutableStateFlow<List<AssistantApp>>(emptyList())
-    val allApps: StateFlow<List<AssistantApp>> = _allApps.asStateFlow()
+    private val prefs = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val prefs = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _savedCustomApps = MutableStateFlow(
         prefs.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet()
     )
     val savedCustomApps: StateFlow<Set<String>> = _savedCustomApps.asStateFlow()
 
+    private val _themeMode = MutableStateFlow(
+        ThemeMode.fromString(prefs.getString(KEY_THEME_MODE, null))
+    )
+    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+
+    private val _showPackageName = MutableStateFlow(prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, true))
+    val showPackageName: StateFlow<Boolean> = _showPackageName.asStateFlow()
+
+    private val _openApp = MutableStateFlow(prefs.getBoolean(KEY_OPEN_APP, false))
+    val openApp: StateFlow<Boolean> = _openApp.asStateFlow()
+
+    private val _closeAfterLaunch = MutableStateFlow(prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true))
+    val closeAfterLaunch: StateFlow<Boolean> = _closeAfterLaunch.asStateFlow()
+
+    private val _themedIconMode = MutableStateFlow(
+        ThemedIconMode.fromString(prefs.getString(KEY_THEMED_ICONS, null))
+    )
+    val themedIconMode: StateFlow<ThemedIconMode> = _themedIconMode.asStateFlow()
+
+    private val _appFilterMode = MutableStateFlow(
+        AppFilterMode.valueOf(prefs.getString(KEY_APP_FILTER_MODE, AppFilterMode.VOICE_ASSISTANTS.name)
+            ?: AppFilterMode.VOICE_ASSISTANTS.name)
+    )
+    val appFilterMode: StateFlow<AppFilterMode> = _appFilterMode.asStateFlow()
+
+    val assistantApps: StateFlow<List<AssistantApp>> = AppCache.state
+        .map { it.assistantApps }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val allApps: StateFlow<List<AssistantApp>> = AppCache.state
+        .map { it.allApps }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private val preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-        if (key == KEY_CUSTOM_APPS) {
-            _savedCustomApps.value = sharedPreferences.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet()
+        when (key) {
+            KEY_CUSTOM_APPS -> _savedCustomApps.value = sharedPreferences.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet()
+            KEY_THEME_MODE -> _themeMode.value = ThemeMode.fromString(sharedPreferences.getString(KEY_THEME_MODE, null))
+            KEY_SHOW_PACKAGE_NAME -> _showPackageName.value = sharedPreferences.getBoolean(KEY_SHOW_PACKAGE_NAME, true)
+            KEY_OPEN_APP -> _openApp.value = sharedPreferences.getBoolean(KEY_OPEN_APP, false)
+            KEY_CLOSE_AFTER_LAUNCH -> _closeAfterLaunch.value = sharedPreferences.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)
+            KEY_THEMED_ICONS -> _themedIconMode.value = ThemedIconMode.fromString(sharedPreferences.getString(KEY_THEMED_ICONS, null))
+            KEY_APP_FILTER_MODE -> {
+                val modeStr = sharedPreferences.getString(KEY_APP_FILTER_MODE, AppFilterMode.VOICE_ASSISTANTS.name)
+                _appFilterMode.value = AppFilterMode.valueOf(modeStr ?: AppFilterMode.VOICE_ASSISTANTS.name)
+            }
         }
     }
 
     init {
         prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener)
         AppCache.state
-            .onEach { cache ->
-                if (cache.isReady) {
-                    _assistantApps.value = cache.assistantApps
-                    _allApps.value       = cache.allApps
-                    _isLoading.value     = false
-                }
-            }
+            .onEach { if (it.isReady) _isLoading.value = false }
             .launchIn(viewModelScope)
     }
 
@@ -58,8 +81,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun saveCustomApps(packages: List<String>) {
-        val set = packages.toSet()
-        prefs.edit().putStringSet(KEY_CUSTOM_APPS, set).apply()
-        _savedCustomApps.value = set
+        prefs.edit().putStringSet(KEY_CUSTOM_APPS, packages.toSet()).apply()
+    }
+
+    fun setAppFilterMode(mode: AppFilterMode) {
+        prefs.edit().putString(KEY_APP_FILTER_MODE, mode.name).apply()
     }
 }

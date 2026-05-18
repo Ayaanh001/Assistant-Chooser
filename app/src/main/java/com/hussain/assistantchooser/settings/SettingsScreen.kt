@@ -29,11 +29,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.hussain.assistantchooser.BuildConfig
 import com.hussain.assistantchooser.R
 import com.hussain.assistantchooser.core.OverlaySource
+import com.hussain.assistantchooser.core.ThemeMode
+import com.hussain.assistantchooser.core.ThemedIconMode
 import com.hussain.assistantchooser.ui.components.ChangelogBottomSheet
 import com.hussain.assistantchooser.ui.components.GroupSurface
 import kotlinx.coroutines.Dispatchers
@@ -47,15 +51,19 @@ fun SettingsScreen(
     initialOpenApp: Boolean,
     initialCloseAfter: Boolean,
     initialShowPackage: Boolean,
+    initialThemedIconMode: ThemedIconMode,
     initialOverlaySrc: OverlaySource,
     initialShowAppName: Boolean,
     initialTileOpenOverlay: Boolean,
+    initialThemeMode: ThemeMode,
     onToggleOpenApp: (Boolean) -> Unit,
     onToggleCloseAfter: (Boolean) -> Unit,
     onToggleShowPackageName: (Boolean) -> Unit,
+    onThemedIconModeChange: (ThemedIconMode) -> Unit,
     onOverlaySourceChange: (OverlaySource) -> Unit,
     onToggleShowAppName: (Boolean) -> Unit,
     onToggleTileOpenOverlay: (Boolean) -> Unit,
+    onThemeModeChange: (ThemeMode) -> Unit,
     onExport: (exportCustomApps: Boolean, exportSettings: Boolean) -> Unit,
     onImport: (String) -> Unit,
     onBack: () -> Unit
@@ -64,19 +72,24 @@ fun SettingsScreen(
     var openApp       by remember { mutableStateOf(initialOpenApp) }
     var closeAfter    by remember { mutableStateOf(initialCloseAfter) }
     var showPkg       by remember { mutableStateOf(initialShowPackage) }
+    var themedIconMode by remember { mutableStateOf(initialThemedIconMode) }
     var overlaySource by remember { mutableStateOf(initialOverlaySrc) }
     var showAppName   by remember { mutableStateOf(initialShowAppName) }
     var tileOpenOverlay by remember { mutableStateOf(initialTileOpenOverlay) }
+    var themeMode     by remember { mutableStateOf(initialThemeMode) }
 
     // Sync state when props change (e.g. after import)
     LaunchedEffect(initialOpenApp) { openApp = initialOpenApp }
     LaunchedEffect(initialCloseAfter) { closeAfter = initialCloseAfter }
     LaunchedEffect(initialShowPackage) { showPkg = initialShowPackage }
+    LaunchedEffect(initialThemedIconMode) { themedIconMode = initialThemedIconMode }
     LaunchedEffect(initialOverlaySrc) { overlaySource = initialOverlaySrc }
     LaunchedEffect(initialShowAppName) { showAppName = initialShowAppName }
     LaunchedEffect(initialTileOpenOverlay) { tileOpenOverlay = initialTileOpenOverlay }
+    LaunchedEffect(initialThemeMode) { themeMode = initialThemeMode }
 
     var showSrcSheet  by remember { mutableStateOf(false) }
+    var showThemedSheet by remember { mutableStateOf(false) }
     var showChangelog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
 
@@ -210,6 +223,51 @@ fun SettingsScreen(
         ChangelogBottomSheet(onDismiss = { showChangelog = false })
     }
 
+    if (showThemedSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showThemedSheet = false },
+            sheetState       = sheetState,
+            containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
+            dragHandle       = { BottomSheetDefaults.DragHandle() },
+            contentWindowInsets = { WindowInsets.navigationBars }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 48.dp)
+            ) {
+                Text(
+                    text       = "Themed Icons",
+                    style      = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier   = Modifier.padding(horizontal = 12.dp)
+                )
+                Spacer(Modifier.height(24.dp))
+                GroupSurface(count = 4) { index, shape ->
+                    val option = ThemedIconMode.entries[index]
+                    val title = when (option) {
+                        ThemedIconMode.OFF          -> "Off"
+                        ThemedIconMode.APP_ONLY     -> "App only"
+                        ThemedIconMode.OVERLAY_ONLY -> "Overlay only"
+                        ThemedIconMode.BOTH         -> "App & Overlay"
+                    }
+                    ThemedIconOption(
+                        title    = title,
+                        selected = themedIconMode == option,
+                        shape    = shape,
+                        onClick  = {
+                            performHapticFeedback(context)
+                            themedIconMode = option
+                            onThemedIconModeChange(option)
+                            showThemedSheet = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -235,10 +293,15 @@ fun SettingsScreen(
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent
+                )
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarState) }
+        snackbarHost = { SnackbarHost(hostState = snackbarState) },
+        containerColor = MaterialTheme.colorScheme.background
     ) { pad ->
         LazyColumn(
             modifier            = Modifier
@@ -247,6 +310,32 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            // Theme section
+            item {
+                SectionLabel("Appearance")
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ThemeCard(
+                        selectedTheme = themeMode,
+                        onThemeChange = {
+                            performHapticFeedback(context)
+                            themeMode = it
+                            onThemeModeChange(it)
+                        }
+                    )
+                    GroupSurface(count = 1) { index, shape ->
+                        ThemedIconTile(
+                            iconColor      = Color(0xFFE91E63),
+                            themedIconMode = themedIconMode,
+                            shape          = shape,
+                            onClick        = {
+                                performHapticFeedback(context)
+                                showThemedSheet = true
+                            }
+                        )
+                    }
+                }
+            }
+
             // Behaviour section
             item {
                 SectionLabel("Behaviour")
@@ -478,6 +567,96 @@ private fun SectionLabel(text: String) {
     )
 }
 
+// ── Theme Card ────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ThemeCard(
+    selectedTheme: ThemeMode,
+    onThemeChange: (ThemeMode) -> Unit
+) {
+    Surface(
+        modifier       = Modifier.fillMaxWidth(),
+        shape          = RoundedCornerShape(24.dp),
+        color          = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 3.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+            ) {
+                Icon(
+                    Icons.Default.Palette,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = "Theme",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            val options = ThemeMode.entries
+            val count   = options.size
+
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+            ) {
+                options.forEachIndexed { index, option ->
+                    val isSelected = selectedTheme == option
+
+                    val shapes = when {
+                        count == 1         -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        index == 0         -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        index == count - 1 -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        else               -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    }
+
+                    ToggleButton(
+                        modifier        = Modifier.weight(1f).height(44.dp),
+                        checked         = isSelected,
+                        onCheckedChange = { if (it) onThemeChange(option) },
+                        shapes          = shapes,
+                        colors          = ToggleButtonDefaults.toggleButtonColors(
+                            checkedContainerColor = MaterialTheme.colorScheme.primary,
+                            checkedContentColor   = MaterialTheme.colorScheme.onPrimary,
+                            containerColor        = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor          = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    ) {
+                        Icon(
+                            imageVector = when (option) {
+                                ThemeMode.AUTO  -> Icons.Default.BrightnessAuto
+                                ThemeMode.LIGHT -> Icons.Default.LightMode
+                                ThemeMode.DARK  -> Icons.Default.DarkMode
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text       = when (option) {
+                                ThemeMode.AUTO  -> "Auto"
+                                ThemeMode.LIGHT -> "Light"
+                                ThemeMode.DARK  -> "Dark"
+                            },
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontSize   = 13.sp,
+                            maxLines   = 1,
+                            overflow   = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 // ── Setting tiles ─────────────────────────────────────────────────────────────
 
 @Composable
@@ -587,6 +766,65 @@ fun ClickableTile(
 }
 
 @Composable
+private fun ThemedIconTile(
+    iconColor: Color = MaterialTheme.colorScheme.primary,
+    themedIconMode: ThemedIconMode,
+    shape: RoundedCornerShape,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier       = Modifier.fillMaxWidth(),
+        shape          = shape,
+        color          = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 3.dp
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier          = Modifier.fillMaxWidth().clickable { onClick() }.padding(16.dp)
+        ) {
+            Surface(
+                shape    = RoundedCornerShape(12.dp),
+                color    = iconColor.copy(alpha = 0.15f),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(Icons.Default.AutoAwesome, null,
+                    tint     = iconColor,
+                    modifier = Modifier.padding(8.dp))
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Themed icons", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Apply themed icons to different parts of the app",
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.surfaceContainerLowest
+                ) {
+                    Text(
+                        text = when (themedIconMode) {
+                            ThemedIconMode.OFF          -> "Off"
+                            ThemedIconMode.APP_ONLY     -> "App only"
+                            ThemedIconMode.OVERLAY_ONLY -> "Overlay only"
+                            ThemedIconMode.BOTH         -> "App & Overlay"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+            }
+            Icon(Icons.Default.ChevronRight, null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
 private fun OverlaySourceTile(
     iconColor: Color = MaterialTheme.colorScheme.primary,
     overlaySource: OverlaySource,
@@ -688,6 +926,43 @@ private fun VersionTile(
 }
 
 @Composable
+fun ThemedIconOption(
+    title: String,
+    selected: Boolean,
+    shape: RoundedCornerShape,
+    onClick: () -> Unit
+) {
+    val bgColor      = if (selected) MaterialTheme.colorScheme.secondaryContainer
+    else MaterialTheme.colorScheme.surfaceContainerLow
+    val contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
+    else MaterialTheme.colorScheme.onSurface
+
+    Surface(
+        modifier = Modifier.fillMaxWidth().height(64.dp).clip(shape).clickable(onClick = onClick),
+        color    = bgColor,
+        shape    = shape
+    ) {
+        Row(
+            modifier          = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium,
+                color = contentColor, fontWeight = FontWeight.SemiBold)
+            RadioButton(
+                selected = selected,
+                onClick  = onClick,
+                colors   = RadioButtonDefaults.colors(
+                    selectedColor   = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
+                    else MaterialTheme.colorScheme.primary,
+                    unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+    }
+}
+
+@Composable
 fun OverlaySourceOption(
     title: String,
     description: String,
@@ -706,7 +981,7 @@ fun OverlaySourceOption(
         shape    = shape
     ) {
         Row(
-            modifier          = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+            modifier          = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
