@@ -121,8 +121,6 @@ class MainActivity : ComponentActivity() {
                     onAddTileClicked = { requestAddQuickSettingsTile() },
                     onSaveCustomApps = { pkgs -> viewModel.saveCustomApps(pkgs) },
                     savedCustomApps = savedCustomApps,
-                    openApp = openApp,
-                    closeAfterLaunch = closeAfter,
                     showPackageName = showPackageName,
                     themedIcons = themedIconMode == ThemedIconMode.APP_ONLY || themedIconMode == ThemedIconMode.BOTH
                 )
