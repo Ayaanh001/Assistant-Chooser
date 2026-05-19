@@ -1,7 +1,6 @@
 package com.hussain.assistantchooser.settings
 
 import android.content.Context
-import com.hussain.assistantchooser.BuildConfig
 import com.hussain.assistantchooser.core.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -9,7 +8,7 @@ import org.json.JSONObject
 object BackupUtils {
 
     private const val BACKUP_IDENTIFIER = "assistant_chooser_backup_id"
-    private val APP_ID_VALUE = BuildConfig.APPLICATION_ID
+    private const val APP_ID_VALUE      = "com.hussain.assistantchooser"
 
     fun createExportJson(
         context: Context,
