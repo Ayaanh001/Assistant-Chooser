@@ -39,20 +39,22 @@ fun loadApps(pm: PackageManager) {
         .distinctBy { it.packageName }
         .sortedBy   { it.name.lowercase() }
 
-    val allApps = pm
-        .getInstalledApplications(PackageManager.GET_META_DATA)
-        .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+    val launchIntent = Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
+    val allApps = pm.queryIntentActivities(launchIntent, 0)
         .map {
+            val ai = it.activityInfo.applicationInfo
             AssistantApp(
-                name        = pm.getApplicationLabel(it).toString(),
-                packageName = it.packageName,
-                icon        = pm.getApplicationIcon(it)
+                name        = pm.getApplicationLabel(ai).toString(),
+                packageName = ai.packageName,
+                icon        = pm.getApplicationIcon(ai)
             )
         }
-        .sortedBy { it.name.lowercase() }
+        .distinctBy { it.packageName }
+        .sortedBy   { it.name.lowercase() }
 
     // Pre-warm bitmap conversion so overlay launch is truly instant
     assistantApps.forEach { runCatching { it.iconBitmap } }
+    allApps.forEach { runCatching { it.iconBitmap } }
 
     AppCache.populate(assistantApps, allApps)
 }
