@@ -494,7 +494,7 @@ fun SettingsScreen(
                             icon      = ImageVector.vectorResource(R.drawable.telegram),
                             iconColor = Color(0xFF24A1DE),
                             title     = "Telegram",
-                            subtitle  = "Join the community",
+                            subtitle  = "Community & Support",
                             onClick   = {
                                 performHapticFeedback(context)
                                 context.startActivity(
