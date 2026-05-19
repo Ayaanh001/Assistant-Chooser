@@ -67,7 +67,7 @@ class SettingsActivity : ComponentActivity() {
                 ) {
                     var openApp by remember { mutableStateOf(prefs.getBoolean(KEY_OPEN_APP, false)) }
                     var closeAfter by remember { mutableStateOf(prefs.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)) }
-                    var showPkg by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, true)) }
+                    var showPkg by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, false)) }
                     var showAppName by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_APP_NAME, true)) }
                     var themedIconMode by remember {
                         mutableStateOf(ThemedIconMode.fromString(prefs.getString(KEY_THEMED_ICONS, null)))

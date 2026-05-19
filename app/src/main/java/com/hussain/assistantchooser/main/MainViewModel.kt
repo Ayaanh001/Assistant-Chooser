@@ -25,7 +25,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
-    private val _showPackageName = MutableStateFlow(prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, true))
+    private val _showPackageName = MutableStateFlow(prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, false))
     val showPackageName: StateFlow<Boolean> = _showPackageName.asStateFlow()
 
     private val _openApp = MutableStateFlow(prefs.getBoolean(KEY_OPEN_APP, false))
@@ -57,7 +57,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         when (key) {
             KEY_CUSTOM_APPS -> _savedCustomApps.value = sharedPreferences.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet()
             KEY_THEME_MODE -> _themeMode.value = ThemeMode.fromString(sharedPreferences.getString(KEY_THEME_MODE, null))
-            KEY_SHOW_PACKAGE_NAME -> _showPackageName.value = sharedPreferences.getBoolean(KEY_SHOW_PACKAGE_NAME, true)
+            KEY_SHOW_PACKAGE_NAME -> _showPackageName.value = sharedPreferences.getBoolean(KEY_SHOW_PACKAGE_NAME, false)
             KEY_OPEN_APP -> _openApp.value = sharedPreferences.getBoolean(KEY_OPEN_APP, false)
             KEY_CLOSE_AFTER_LAUNCH -> _closeAfterLaunch.value = sharedPreferences.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)
             KEY_THEMED_ICONS -> _themedIconMode.value = ThemedIconMode.fromString(sharedPreferences.getString(KEY_THEMED_ICONS, null))
