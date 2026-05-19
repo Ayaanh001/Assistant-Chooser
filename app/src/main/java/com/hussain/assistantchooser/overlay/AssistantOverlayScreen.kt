@@ -28,13 +28,14 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.hussain.assistantchooser.BuildConfig
 import com.hussain.assistantchooser.core.AssistantApp
 import com.hussain.assistantchooser.core.OverlaySource
 import com.hussain.assistantchooser.main.CustomAppPickerBottomSheet
 import com.hussain.assistantchooser.ui.components.AppIconItem
 import com.hussain.assistantchooser.ui.components.SkeletonOverlayGrid
 
-private const val OWN_PACKAGE = "com.hussain.assistantchooser"
+private val OWN_PACKAGE = BuildConfig.APPLICATION_ID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -46,7 +46,7 @@ class QuickLaunchTileService : TileService() {
         super.onStartListening()
         qsTile?.apply {
             state = Tile.STATE_ACTIVE
-            label = "Assistant chooser"
+            label = getString(R.string.app_name)
             icon  = android.graphics.drawable.Icon.createWithResource(
                 this@QuickLaunchTileService, R.drawable.qs_tile
             )
