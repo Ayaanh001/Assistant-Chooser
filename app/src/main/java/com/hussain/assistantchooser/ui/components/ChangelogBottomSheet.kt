@@ -35,6 +35,7 @@ private val assistantChooserChangelog = listOf(
                 title = "Added",
                 items = listOf(
                     "Backup feature to export/import custom apps list and app settings",
+                    "Themed icons support for main app and overlay",
                     "Option to open overlay using Quick Settings tile",
                     "Empty screen UI for custom apps filter",
                 )
@@ -52,7 +53,8 @@ private val assistantChooserChangelog = listOf(
             ACChangelogSection(
                 title = "Fixed",
                 items = listOf(
-                    "Fixed overlay launching behavior to respect 'Open App' setting"
+                    "Fixed overlay launching behavior to respect 'Open App' setting",
+                    "Real-time detection and refresh of newly installed apps"
                 )
             )
         )

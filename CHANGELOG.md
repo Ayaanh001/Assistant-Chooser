@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Backup feature to export/import custom apps list and app settings
+- Themed icons support for main app and overlay
 - Option to open overlay using Quick Settings tile
 - Empty screen UI for custom apps filter
 
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed overlay launching behavior to respect 'Open App' setting correctly
+- Real-time detection and refresh of newly installed apps in the picker
 
 ---
 
