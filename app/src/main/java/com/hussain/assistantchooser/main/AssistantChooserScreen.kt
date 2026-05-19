@@ -36,6 +36,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
+import com.hussain.assistantchooser.R
 import com.hussain.assistantchooser.core.AppFilterMode
 import com.hussain.assistantchooser.core.AssistantApp
 import com.hussain.assistantchooser.ui.components.GroupSurface
@@ -78,7 +80,7 @@ fun AssistantChooserScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            "Assistant Chooser",
+                            text  = stringResource(R.string.app_name),
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                         )
                     },
