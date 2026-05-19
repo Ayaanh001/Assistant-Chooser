@@ -33,10 +33,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import com.hussain.assistantchooser.R
 import com.hussain.assistantchooser.core.AppFilterMode
 import com.hussain.assistantchooser.core.AssistantApp
@@ -386,9 +391,20 @@ fun CustomAppPickerBottomSheet(
     }
     var searchQuery       by remember { mutableStateOf("") }
     val focusManager      = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     var isKeyboardVisible by remember { mutableStateOf(false) }
+    val listState         = rememberLazyListState()
+
+    // Dismiss keyboard when scrolling
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress) {
+            focusManager.clearFocus()
+            keyboardController?.hide()
+        }
+    }
 
     BackHandler(enabled = isKeyboardVisible) {
+        keyboardController?.hide()
         focusManager.clearFocus()
         isKeyboardVisible = false
     }
@@ -443,31 +459,46 @@ fun CustomAppPickerBottomSheet(
                                 fontWeight = FontWeight.Bold
                             )
                         }
+                        val focusManager = LocalFocusManager.current
+                        val keyboardController = LocalSoftwareKeyboardController.current
+
                         TextField(
-                            value         = searchQuery,
-                            onValueChange = { searchQuery = it; isKeyboardVisible = true },
-                            modifier      = Modifier
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .onFocusChanged { isKeyboardVisible = it.isFocused },
-                            placeholder   = { Text("Search for apps…") },
-                            leadingIcon   = { Icon(Icons.Default.Search, null) },
-                            trailingIcon  = {
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            placeholder = { Text("Search for apps…") },
+                            leadingIcon = { Icon(Icons.Default.Search, null) },
+                            trailingIcon = {
                                 if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Default.Clear, null)
+                                    IconButton(
+                                        onClick = {
+                                            searchQuery = ""
+                                            focusManager.clearFocus(force = true)
+                                            keyboardController?.hide()
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Clear,
+                                            contentDescription = "Clear"
+                                        )
                                     }
                                 }
                             },
-                            singleLine      = true,
-                            shape           = RoundedCornerShape(32.dp),
-                            colors          = TextFieldDefaults.colors(
-                                focusedIndicatorColor   = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            ),
+
+                            singleLine = true,
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(
-                                onDone = { focusManager.clearFocus(); isKeyboardVisible = false }
+                                onDone = {
+                                    focusManager.clearFocus(force = true)
+                                    keyboardController?.hide()
+                                }
+                            ),
+                            shape = RoundedCornerShape(32.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
                             )
                         )
                     }
@@ -482,8 +513,74 @@ fun CustomAppPickerBottomSheet(
                     )
                 }
             ) { innerPadding ->
+                if (filteredApps.isEmpty() && searchQuery.isNotEmpty()) {
+                    val suggestedApp = remember(searchQuery) {
+                        if (searchQuery.length < 2) null
+                        else initialSorted.find {
+                            val name = it.name.lowercase()
+                            val query = searchQuery.lowercase()
+                            name.startsWith(query) || 
+                            calculateLevenshteinDistance(name, query) <= 2
+                        }
+                    }
+
+                    Box(
+                        modifier         = Modifier.fillMaxSize().padding(innerPadding),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.SearchOff,
+                                contentDescription = null,
+                                modifier           = Modifier.size(64.dp),
+                                tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                "No apps found for \"$searchQuery\"",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            if (suggestedApp != null) {
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    text = buildAnnotatedString {
+                                        append("Did you mean ")
+                                        withStyle(
+                                            SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(suggestedApp.name)
+                                        }
+                                        append("?")
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier
+                                        .background(
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                            CircleShape
+                                        )
+                                        .clip(CircleShape)
+                                        .clickable { 
+                                            searchQuery = suggestedApp.name 
+                                            focusManager.clearFocus()
+                                            keyboardController?.hide()
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 LazyColumn(
-                    modifier            = Modifier.padding(innerPadding).padding(horizontal = 14.dp),
+                    state               = listState,
+                    modifier            = Modifier
+                        .padding(innerPadding)
+                        .padding(horizontal = 14.dp),
                     contentPadding      = PaddingValues(bottom = 100.dp, top = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
@@ -501,6 +598,8 @@ fun CustomAppPickerBottomSheet(
                                 .clip(shape)
                                 .clickable {
                                     selectedApps[app.packageName] = !(selectedApps[app.packageName] ?: false)
+                                    focusManager.clearFocus()
+                                    keyboardController?.hide()
                                 }
                                 .background(
                                     color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -547,6 +646,24 @@ fun CustomAppPickerBottomSheet(
             )
         }
     }
+}
+
+private fun calculateLevenshteinDistance(s1: String, s2: String): Int {
+    if (s1 == s2) return 0
+    if (s1.isEmpty()) return s2.length
+    if (s2.isEmpty()) return s1.length
+
+    val dp = IntArray(s2.length + 1) { it }
+    for (i in 1..s1.length) {
+        var prev = i
+        for (j in 1..s2.length) {
+            val next = if (s1[i - 1] == s2[j - 1]) dp[j - 1] else minOf(dp[j - 1], dp[j], prev) + 1
+            dp[j - 1] = prev
+            prev = next
+        }
+        dp[s2.length] = prev
+    }
+    return dp[s2.length]
 }
 
 @Composable
