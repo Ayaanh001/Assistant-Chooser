@@ -3,45 +3,27 @@ package com.hussain.assistantchooser.main
 import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import com.hussain.assistantchooser.R
 import com.hussain.assistantchooser.core.AppFilterMode
 import com.hussain.assistantchooser.core.AssistantApp
@@ -63,8 +45,6 @@ fun AssistantChooserScreen(
     onAddTileClicked: () -> Unit,
     onSaveCustomApps: (List<String>) -> Unit,
     savedCustomApps: Set<String>,
-    openApp: Boolean,
-    closeAfterLaunch: Boolean,
     showPackageName: Boolean,
     themedIcons: Boolean,
 ) {
@@ -260,16 +240,10 @@ fun AssistantChooserScreen(
                     )
                 },
                 colors   = ButtonDefaults.filledTonalButtonColors(),
-                //Brighter color
-//                colors = ButtonDefaults.buttonColors(
-//                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-//                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-//                ),
-//
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape    = RoundedCornerShape(28.dp)
             ) {
-                Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Open Default Assistant Settings")
             }
@@ -340,409 +314,5 @@ fun AssistantChooserScreen(
                 showCustomAppPicker = false
             }
         )
-    }
-}
-
-@Composable
-fun FilterOption(
-    text: String,
-    selected: Boolean,
-    shape: RoundedCornerShape,
-    onClick: () -> Unit
-) {
-    val bg      = if (selected) MaterialTheme.colorScheme.secondaryContainer
-    else MaterialTheme.colorScheme.surfaceContainerLow
-    val content = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
-    else MaterialTheme.colorScheme.onSurface
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .clip(shape)
-            .clickable(onClick = onClick),
-        color = bg,
-        shape = shape
-    ) {
-        Row(
-            modifier              = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text, color = content, style = MaterialTheme.typography.titleMedium)
-            RadioButton(selected = selected, onClick = onClick)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CustomAppPickerBottomSheet(
-    allApps: List<AssistantApp>,
-    selectedPackages: List<String>,
-    onDismiss: () -> Unit,
-    onConfirm: (List<String>) -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val selectedApps = remember {
-        mutableStateMapOf<String, Boolean>().apply {
-            selectedPackages.forEach { put(it, true) }
-        }
-    }
-    var searchQuery       by remember { mutableStateOf("") }
-    val focusManager      = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
-    var isKeyboardVisible by remember { mutableStateOf(false) }
-    val listState         = rememberLazyListState()
-
-    // Dismiss keyboard when scrolling
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (listState.isScrollInProgress) {
-            focusManager.clearFocus()
-            keyboardController?.hide()
-        }
-    }
-
-    BackHandler(enabled = isKeyboardVisible) {
-        keyboardController?.hide()
-        focusManager.clearFocus()
-        isKeyboardVisible = false
-    }
-
-    val initialSorted = remember(allApps) {
-        allApps.sortedWith(
-            compareByDescending<AssistantApp> { selectedApps[it.packageName] == true }
-                .thenBy { it.name.lowercase() }
-        )
-    }
-
-    // Pre-convert ALL bitmaps once so LazyColumn items never do it during scroll
-    val imageBitmapCache = remember(initialSorted) {
-        initialSorted.associate { app -> app.packageName to app.iconBitmap.asImageBitmap() }
-    }
-
-    val filteredApps = remember(searchQuery, initialSorted) {
-        if (searchQuery.isBlank()) initialSorted
-        else initialSorted.filter { it.name.contains(searchQuery, ignoreCase = true) }
-    }
-
-    // Pre-compute shapes for the current filtered list so items read from a map,
-    // not recalculate, during fast scroll
-    val shapeCache = remember(filteredApps) {
-        filteredApps.indices.associate { index ->
-            filteredApps[index].packageName to getGroupShape(index, filteredApps.size)
-        }
-    }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState       = sheetState,
-        containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier         = Modifier.fillMaxSize(),
-        dragHandle       = { BottomSheetDefaults.DragHandle() }
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Scaffold(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                topBar = {
-                    Column {
-                        Row(
-                            modifier              = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 26.dp, vertical = 8.dp),
-                            verticalAlignment     = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                "Choose Apps",
-                                style      = MaterialTheme.typography.displaySmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        val focusManager = LocalFocusManager.current
-                        val keyboardController = LocalSoftwareKeyboardController.current
-
-                        TextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            placeholder = { Text("Search for apps…") },
-                            leadingIcon = { Icon(Icons.Default.Search, null) },
-                            trailingIcon = {
-                                if (searchQuery.isNotEmpty()) {
-                                    IconButton(
-                                        onClick = {
-                                            searchQuery = ""
-                                            focusManager.clearFocus(force = true)
-                                            keyboardController?.hide()
-                                        }
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Clear,
-                                            contentDescription = "Clear"
-                                        )
-                                    }
-                                }
-                            },
-
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    focusManager.clearFocus(force = true)
-                                    keyboardController?.hide()
-                                }
-                            ),
-                            shape = RoundedCornerShape(32.dp),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            )
-                        )
-                    }
-                },
-                floatingActionButton = {
-                    ExtendedFloatingActionButton(
-                        modifier = Modifier.padding(bottom = 18.dp, end = 8.dp),
-                        shape    = CircleShape,
-                        onClick  = { onConfirm(selectedApps.filterValues { it }.keys.toList()) },
-                        icon     = { Icon(Icons.Default.Check, "Confirm") },
-                        text     = { Text("Confirm") },
-                    )
-                }
-            ) { innerPadding ->
-                if (filteredApps.isEmpty() && searchQuery.isNotEmpty()) {
-                    val suggestedApp = remember(searchQuery) {
-                        if (searchQuery.length < 2) null
-                        else initialSorted.find {
-                            val name = it.name.lowercase()
-                            val query = searchQuery.lowercase()
-                            name.startsWith(query) || 
-                            calculateLevenshteinDistance(name, query) <= 2
-                        }
-                    }
-
-                    Box(
-                        modifier         = Modifier.fillMaxSize().padding(innerPadding),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.SearchOff,
-                                contentDescription = null,
-                                modifier           = Modifier.size(64.dp),
-                                tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                "No apps found for \"$searchQuery\"",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            if (suggestedApp != null) {
-                                Spacer(Modifier.height(12.dp))
-                                Text(
-                                    text = buildAnnotatedString {
-                                        append("Did you mean ")
-                                        withStyle(
-                                            SpanStyle(
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        ) {
-                                            append(suggestedApp.name)
-                                        }
-                                        append("?")
-                                    },
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier
-                                        .background(
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                            CircleShape
-                                        )
-                                        .clip(CircleShape)
-                                        .clickable { 
-                                            searchQuery = suggestedApp.name 
-                                            focusManager.clearFocus()
-                                            keyboardController?.hide()
-                                        }
-                                        .padding(horizontal = 16.dp, vertical = 10.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                LazyColumn(
-                    state               = listState,
-                    modifier            = Modifier
-                        .padding(innerPadding)
-                        .padding(horizontal = 14.dp),
-                    contentPadding      = PaddingValues(bottom = 100.dp, top = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
-                    items(
-                        count = filteredApps.size,
-                        key   = { filteredApps[it].packageName }
-                    ) { index ->
-                        val app        = filteredApps[index]
-                        val shape      = shapeCache[app.packageName] ?: getGroupShape(index, filteredApps.size)
-                        val imageBitmap = imageBitmapCache[app.packageName]
-
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clip(shape)
-                                .clickable {
-                                    selectedApps[app.packageName] = !(selectedApps[app.packageName] ?: false)
-                                    focusManager.clearFocus()
-                                    keyboardController?.hide()
-                                }
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    shape = shape
-                                )
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(
-                                checked         = selectedApps[app.packageName] ?: false,
-                                onCheckedChange = { selectedApps[app.packageName] = it }
-                            )
-                            if (imageBitmap != null) {
-                                Image(
-                                    bitmap             = imageBitmap,
-                                    contentDescription = app.name,
-                                    modifier           = Modifier.size(36.dp).clip(CircleShape)
-                                )
-                            } else {
-                                Spacer(Modifier.size(36.dp))
-                            }
-                            Spacer(Modifier.width(16.dp))
-                            Text(text = app.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-                }
-            }
-
-            // Fade gradient at bottom
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(25.dp)
-                    .background(
-                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                            listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
-                                MaterialTheme.colorScheme.surfaceContainerHigh
-                            )
-                        )
-                    )
-            )
-        }
-    }
-}
-
-private fun calculateLevenshteinDistance(s1: String, s2: String): Int {
-    if (s1 == s2) return 0
-    if (s1.isEmpty()) return s2.length
-    if (s2.isEmpty()) return s1.length
-
-    val dp = IntArray(s2.length + 1) { it }
-    for (i in 1..s1.length) {
-        var prev = i
-        for (j in 1..s2.length) {
-            val next = if (s1[i - 1] == s2[j - 1]) dp[j - 1] else minOf(dp[j - 1], dp[j], prev) + 1
-            dp[j - 1] = prev
-            prev = next
-        }
-        dp[s2.length] = prev
-    }
-    return dp[s2.length]
-}
-
-@Composable
-fun AssistantAppRadioCard(
-    app: AssistantApp,
-    shape: RoundedCornerShape,
-    selected: Boolean,
-    themedIcons: Boolean,
-    onSelect: () -> Unit,
-    onOpenApp: () -> Unit,
-    showPackageName: Boolean
-) {
-    val backgroundColor = MaterialTheme.colorScheme.primaryContainer.toArgb()
-    val foregroundColor = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
-
-    val iconBitmap = remember(app.packageName, themedIcons, backgroundColor, foregroundColor) {
-        if (themedIcons) {
-            (app.getThemedIconBitmap(backgroundColor, foregroundColor) ?: app.iconBitmap).asImageBitmap()
-        } else {
-            app.iconBitmap.asImageBitmap()
-        }
-    }
-    val haptic     = LocalHapticFeedback.current
-
-    Surface(
-        modifier       = Modifier.fillMaxWidth(),
-        shape          = shape,
-        color          = MaterialTheme.colorScheme.surfaceContainer,
-//        tonalElevation = 3.dp
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-//            modifier          = Modifier.padding(16.dp)
-                    modifier          = Modifier.padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication        = ripple()
-                    ) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onOpenApp()
-                    },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    bitmap             = iconBitmap,
-                    contentDescription = app.name,
-                    modifier           = Modifier.size(48.dp).clip(CircleShape)
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text(
-                        text  = app.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    if (showPackageName) {
-                        Text(
-                            text     = app.packageName,
-                            style    = MaterialTheme.typography.bodySmall,
-                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
-            RadioButton(
-                selected = selected,
-                onClick  = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onSelect()
-                },
-                modifier = Modifier.padding(start = 0.dp)
-            )
-        }
     }
 }
