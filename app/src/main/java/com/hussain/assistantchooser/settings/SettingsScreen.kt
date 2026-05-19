@@ -947,8 +947,7 @@ fun ThemedIconOption(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(title, style = MaterialTheme.typography.titleMedium,
-                color = contentColor, fontWeight = FontWeight.SemiBold)
+            Text(title, style = MaterialTheme.typography.titleMedium, color = contentColor,)
             RadioButton(
                 selected = selected,
                 onClick  = onClick,
