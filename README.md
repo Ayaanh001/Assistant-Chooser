@@ -45,10 +45,13 @@
 - 🔄 Switch between **Gemini**, **ChatGPT**, **Perplexity**, **Copilot**, and more
 - 🎙️ Choose whether tapping an app opens its **voice assistant** or the **full app**
 - 📋 **Custom app list** — curate exactly which apps appear in the overlay
+- 💾 **Backup & Restore** — export and import your custom app list and settings
 - ⚡ **Quick Settings Tile** for instant access without unlocking
-- 🎨 **Material You (Material 3)** UI with full dynamic colour support 
+- 🎨 **Material You (Material 3)** UI with full dynamic colour support
+- 🪄 **Themed Icons** — adaptive icons for both the main app and the overlay
 - 🌙 Light and dark theme support
 - 🧼 Clean, minimal UI focused on speed
+- 📳 **Haptic Feedback** for a better tactile experience
 
 ---
 
