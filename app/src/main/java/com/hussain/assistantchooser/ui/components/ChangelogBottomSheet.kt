@@ -160,7 +160,7 @@ fun ChangelogBottomSheet(
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 6.dp,
-        dragHandle = null
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
 
         LazyColumn(
@@ -178,13 +178,12 @@ fun ChangelogBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                        .statusBarsPadding()
-                        .padding(top = 12.dp, bottom = 16.dp),
+                        .padding(top = 16.dp, bottom = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "Changelog",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
