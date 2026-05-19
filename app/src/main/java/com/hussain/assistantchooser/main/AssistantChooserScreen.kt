@@ -423,9 +423,7 @@ fun CustomAppPickerBottomSheet(
         sheetState       = sheetState,
         containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier         = Modifier.fillMaxSize(),
-        dragHandle       = {
-            Column(Modifier.padding(top = 40.dp)) { BottomSheetDefaults.DragHandle() }
-        }
+        dragHandle       = { BottomSheetDefaults.DragHandle() }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
