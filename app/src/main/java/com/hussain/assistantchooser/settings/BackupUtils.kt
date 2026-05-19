@@ -8,7 +8,7 @@ import org.json.JSONObject
 object BackupUtils {
 
     private const val BACKUP_IDENTIFIER = "assistant_chooser_backup_id"
-    private const val APP_ID_VALUE      = "com.hussain.assistantchooser"
+    private const val APP_ID_VALUE = "com.hussain.assistantchooser"
 
     fun createExportJson(
         context: Context,
