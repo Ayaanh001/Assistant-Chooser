@@ -1,6 +1,7 @@
 package com.hussain.assistantchooser.main
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.hussain.assistantchooser.core.AssistantApp
+import com.hussain.assistantchooser.core.toBitmap
 
 @Composable
 fun AssistantAppRadioCard(
@@ -64,11 +66,31 @@ fun AssistantAppRadioCard(
                     },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    bitmap = iconBitmap,
-                    contentDescription = app.name,
-                    modifier = Modifier.size(48.dp).clip(CircleShape)
-                )
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    Image(
+                        bitmap = iconBitmap,
+                        contentDescription = app.name,
+                        modifier = Modifier.size(48.dp).clip(CircleShape)
+                    )
+                    
+                    if (app.shortcutId != null && app.parentIcon != null) {
+                        Surface(
+                            modifier = Modifier
+                                .size(18.dp)
+                                .offset(x = 2.dp, y = 2.dp)
+                                .border(1.2.dp, MaterialTheme.colorScheme.surfaceContainer, CircleShape),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            tonalElevation = 1.dp
+                        ) {
+                            Image(
+                                bitmap = remember(app.packageName) { app.parentIcon.toBitmap().asImageBitmap() },
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize().padding(1.dp).clip(CircleShape)
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
@@ -76,14 +98,24 @@ fun AssistantAppRadioCard(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    if (showPackageName) {
-                        Text(
-                            text = app.packageName,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                    if (app.shortcutId != null || showPackageName) {
+                        val subText = buildString {
+                            if (app.shortcutId != null) {
+                                append("Shortcut")
+                                // App name is already clear from the badge icon
+                            } else {
+                                append(app.packageName)
+                            }
+                        }
+                        if (subText.isNotEmpty()) {
+                            Text(
+                                text = subText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }

@@ -40,13 +40,14 @@ fun AssistantChooserScreen(
     selectedPackage: String?,
     appFilterMode: AppFilterMode,
     onAppFilterModeChange: (AppFilterMode) -> Unit,
-    onAppClick: (String) -> Unit,
+    onAppClick: (AssistantApp) -> Unit,
     onSettingsClick: () -> Unit,
     onAddTileClicked: () -> Unit,
     onSaveCustomApps: (List<String>) -> Unit,
     savedCustomApps: Set<String>,
     showPackageName: Boolean,
     themedIcons: Boolean,
+    hasShortcutHostPermission: Boolean,
 ) {
     val context = LocalContext.current
     var showFilterDialog    by remember { mutableStateOf(false) }
@@ -55,7 +56,7 @@ fun AssistantChooserScreen(
     val currentAppList = remember(appFilterMode, savedCustomApps, voiceAssistants, allApps) {
         when (appFilterMode) {
             AppFilterMode.VOICE_ASSISTANTS -> voiceAssistants
-            AppFilterMode.CUSTOM_APPS      -> allApps.filter { it.packageName in savedCustomApps }
+            AppFilterMode.CUSTOM_APPS      -> allApps.filter { it.key in savedCustomApps }
         }
     }
 
@@ -202,7 +203,7 @@ fun AssistantChooserScreen(
                     }
                     itemsIndexed(
                         items = currentAppList,
-                        key   = { _, app -> app.packageName }
+                        key   = { _, app -> app.key }
                     ) { index, app ->
                         val shape = remember(index, currentAppList.size) {
                             getGroupShape(index, currentAppList.size)
@@ -223,7 +224,7 @@ fun AssistantChooserScreen(
                                     Toast.LENGTH_LONG
                                 ).show()
                             },
-                            onOpenApp       = { onAppClick(app.packageName) },
+                            onOpenApp       = { onAppClick(app) },
                             showPackageName = showPackageName
                         )
                     }
@@ -307,6 +308,7 @@ fun AssistantChooserScreen(
         CustomAppPickerBottomSheet(
             allApps          = allApps,
             selectedPackages = savedCustomApps.toList(),
+            hasShortcutHostPermission = hasShortcutHostPermission,
             onDismiss        = { showCustomAppPicker = false },
             onConfirm        = { selected ->
                 onSaveCustomApps(selected)

@@ -29,6 +29,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussain.assistantchooser.R
 import com.hussain.assistantchooser.core.*
+import com.hussain.assistantchooser.data.launchAppOrShortcut
 import com.hussain.assistantchooser.data.launchAssistantForPackage
 import com.hussain.assistantchooser.services.QuickLaunchTileService
 import com.hussain.assistantchooser.settings.SettingsActivity
@@ -67,6 +68,7 @@ class MainActivity : ComponentActivity() {
             val allApps by viewModel.allApps.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
             val savedCustomApps by viewModel.savedCustomApps.collectAsStateWithLifecycle()
+            val hasShortcutHostPermission by viewModel.hasShortcutHostPermission.collectAsStateWithLifecycle()
 
             var selectedPackage by remember { mutableStateOf<String?>(null) }
             val context = LocalContext.current
@@ -97,20 +99,11 @@ class MainActivity : ComponentActivity() {
                     selectedPackage = selectedPackage,
                     appFilterMode = appFilterMode,
                     onAppFilterModeChange = { mode -> viewModel.setAppFilterMode(mode) },
-                    onAppClick = { pkg ->
-                        if (pkg == packageName) return@AssistantChooserScreen
-                        if (openApp) {
-                            runCatching {
-                                val launch = packageManager.getLaunchIntentForPackage(pkg)
-                                if (launch != null) {
-                                    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    context.startActivity(launch)
-                                } else launchAssistantForPackage(context, pkg)
-                            }.onFailure { launchAssistantForPackage(context, pkg) }
-                        } else {
-                            launchAssistantForPackage(context, pkg)
-                        }
-                        if (closeAfter) finish()
+                    onAppClick = { app ->
+                        if (app.packageName == packageName && app.shortcutId == null) return@AssistantChooserScreen
+                        
+                        val launched = launchAppOrShortcut(context, app, openDirectly = openApp)
+                        if (launched && closeAfter) finish()
                     },
                     onSettingsClick = {
                         startActivity(
@@ -122,10 +115,16 @@ class MainActivity : ComponentActivity() {
                     onSaveCustomApps = { pkgs -> viewModel.saveCustomApps(pkgs) },
                     savedCustomApps = savedCustomApps,
                     showPackageName = showPackageName,
-                    themedIcons = themedIconMode == ThemedIconMode.APP_ONLY || themedIconMode == ThemedIconMode.BOTH
+                    themedIcons = themedIconMode == ThemedIconMode.APP_ONLY || themedIconMode == ThemedIconMode.BOTH,
+                    hasShortcutHostPermission = hasShortcutHostPermission
                 )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshPermissionState()
     }
 
     @Composable

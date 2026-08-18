@@ -2,7 +2,9 @@ package com.hussain.assistantchooser.overlay
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.LauncherApps
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hussain.assistantchooser.core.*
@@ -46,6 +48,9 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
     )
     val themedIconMode: StateFlow<ThemedIconMode> = _themedIconMode.asStateFlow()
 
+    private val _hasShortcutHostPermission = MutableStateFlow(false)
+    val hasShortcutHostPermission: StateFlow<Boolean> = _hasShortcutHostPermission.asStateFlow()
+
     // Fully reactive list of apps based on source and saved selection
     val apps: StateFlow<List<AssistantApp>> = combine(
         AppCache.state,
@@ -56,7 +61,7 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
             _isLoading.value = false
             when (source) {
                 OverlaySource.ASSISTANT_APPS -> state.assistantApps
-                OverlaySource.CUSTOM_APPS    -> state.allApps.filter { it.packageName in saved }
+                OverlaySource.CUSTOM_APPS    -> state.allApps.filter { it.key in saved }
             }
         } else {
             emptyList()
@@ -104,5 +109,10 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
 
     fun saveCustomApps(packages: List<String>) {
         prefs.edit().putStringSet(KEY_CUSTOM_APPS, packages.toSet()).apply()
+    }
+
+    fun refreshPermissionState() {
+        val launcherApps = getApplication<Application>().getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+        _hasShortcutHostPermission.value = launcherApps?.hasShortcutHostPermission() == true
     }
 }

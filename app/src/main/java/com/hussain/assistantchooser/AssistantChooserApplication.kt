@@ -15,7 +15,7 @@ class AssistantChooserApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        executor.execute { loadApps(packageManager) }
+        executor.execute { loadApps(this) }
 
         // Register package change receiver to refresh app list dynamically
         val filter = IntentFilter().apply {
@@ -31,7 +31,7 @@ class AssistantChooserApplication : Application() {
                 // Small delay to ensure PackageManager is updated
                 executor.execute {
                     Thread.sleep(500)
-                    loadApps(packageManager)
+                    loadApps(this@AssistantChooserApplication)
                 }
             }
         }

@@ -2,7 +2,9 @@ package com.hussain.assistantchooser.main
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.LauncherApps
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hussain.assistantchooser.core.*
@@ -45,6 +47,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val appFilterMode: StateFlow<AppFilterMode> = _appFilterMode.asStateFlow()
 
+    private val _hasShortcutHostPermission = MutableStateFlow(false)
+    val hasShortcutHostPermission: StateFlow<Boolean> = _hasShortcutHostPermission.asStateFlow()
+
     val assistantApps: StateFlow<List<AssistantApp>> = AppCache.state
         .map { it.assistantApps }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -86,5 +91,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setAppFilterMode(mode: AppFilterMode) {
         prefs.edit().putString(KEY_APP_FILTER_MODE, mode.name).apply()
+    }
+
+    fun refreshPermissionState() {
+        val launcherApps = getApplication<Application>().getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+        _hasShortcutHostPermission.value = launcherApps?.hasShortcutHostPermission() == true
     }
 }

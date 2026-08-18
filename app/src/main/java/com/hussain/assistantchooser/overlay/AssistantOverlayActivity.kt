@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussain.assistantchooser.core.*
+import com.hussain.assistantchooser.data.launchAppOrShortcut
 import com.hussain.assistantchooser.data.launchAssistantForPackage
 import com.hussain.assistantchooser.main.MainActivity
 import com.hussain.assistantchooser.ui.theme.AssistantChooserTheme
@@ -44,6 +45,7 @@ class AssistantOverlayActivity : ComponentActivity() {
                 val allApps            by viewModel.allApps.collectAsStateWithLifecycle()
                 val savedCustomPackages by viewModel.savedCustomPackages.collectAsStateWithLifecycle()
                 val themedIconMode     by viewModel.themedIconMode.collectAsStateWithLifecycle()
+                val hasShortcutHostPermission by viewModel.hasShortcutHostPermission.collectAsStateWithLifecycle()
 
                 AssistantOverlayScreen(
                     apps                = apps,
@@ -53,19 +55,10 @@ class AssistantOverlayActivity : ComponentActivity() {
                     savedCustomPackages = savedCustomPackages,
                     showAppName         = showAppName,
                     themedIcons         = themedIconMode == ThemedIconMode.OVERLAY_ONLY || themedIconMode == ThemedIconMode.BOTH,
-                    onAppClick          = { pkg ->
-                        if (openApp) {
-                            runCatching {
-                                val launch = packageManager.getLaunchIntentForPackage(pkg)
-                                if (launch != null) {
-                                    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    startActivity(launch)
-                                } else launchAssistantForPackage(this, pkg)
-                            }.onFailure { launchAssistantForPackage(this, pkg) }
-                        } else {
-                            launchAssistantForPackage(this, pkg)
-                        }
-                        if (closeAfter) finish()
+                    hasShortcutHostPermission = hasShortcutHostPermission,
+                    onAppClick          = { app ->
+                        val launched = launchAppOrShortcut(this, app, openDirectly = openApp)
+                        if (launched && closeAfter) finish()
                     },
                     onDismiss           = { finish() },
                     onOpenApp           = { openFullApp() },
@@ -85,5 +78,10 @@ class AssistantOverlayActivity : ComponentActivity() {
         )
         startActivity(intent)
         finish()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshPermissionState()
     }
 }

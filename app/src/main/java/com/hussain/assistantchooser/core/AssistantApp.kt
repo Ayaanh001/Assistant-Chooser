@@ -1,5 +1,6 @@
 package com.hussain.assistantchooser.core
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.AdaptiveIconDrawable
@@ -7,13 +8,38 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
+import android.os.UserHandle
 
 data class AssistantApp(
     val name: String,
     val packageName: String,
-    val icon: Drawable
+    val icon: Drawable,
+    val shortcutId: String? = null,
+    val userHandle: UserHandle? = null,
+    val appName: String? = null,
+    val activityName: String? = null,
+    val intents: List<Intent>? = null,
+    val parentIcon: Drawable? = null
 ) {
+    val isLaunchable: Boolean get() = intents != null || shortcutId == null
+    val intent: Intent? get() = intents?.lastOrNull()
     val iconBitmap: Bitmap by lazy { icon.toBitmap() }
+
+    /** Unique key for this app/shortcut to be stored in preferences */
+    val key: String get() = buildString {
+        append(packageName)
+        if (shortcutId != null) {
+            append(":")
+            append(shortcutId)
+        } else if (activityName != null) {
+            append("/")
+            append(activityName)
+        }
+        if (userHandle != null) {
+            append(":")
+            append(userHandle.toString().filter { it.isDigit() })
+        }
+    }
 
     fun getThemedIconBitmap(
         backgroundColor: Int,

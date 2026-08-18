@@ -7,18 +7,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -34,7 +26,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.foundation.border
 import com.hussain.assistantchooser.core.AssistantApp
+import com.hussain.assistantchooser.core.toBitmap
 
 @Composable
 fun AppIconItem(
@@ -87,18 +81,46 @@ fun AppIconItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Image(
-            bitmap             = bitmap.asImageBitmap(),
-            contentDescription = app.name,
-            modifier           = Modifier
-                .size(iconSize)
-                .clip(CircleShape)
-        )
+        Box(contentAlignment = Alignment.BottomEnd) {
+            Image(
+                bitmap             = bitmap.asImageBitmap(),
+                contentDescription = app.name,
+                modifier           = Modifier
+                    .size(iconSize)
+                    .clip(CircleShape)
+            )
+            
+            if (app.shortcutId != null && app.parentIcon != null) {
+                val badgeSize = iconSize * 0.35f
+                Surface(
+                    modifier = Modifier
+                        .size(badgeSize)
+                        .offset(x = 2.dp, y = 2.dp)
+                        .border(1.5.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 2.dp
+                ) {
+                    Image(
+                        bitmap = remember(app.packageName) { app.parentIcon.toBitmap().asImageBitmap() },
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize().padding(1.dp).clip(CircleShape)
+                    )
+                }
+            }
+        }
         if (showAppName) {
             Spacer(Modifier.height(6.dp))
+            val displayName = remember(app.name, app.appName, app.shortcutId) {
+                if (app.shortcutId != null && app.appName != null) {
+                    "${app.name}\n${app.appName}"
+                } else {
+                    app.name
+                }
+            }
             Text(
-                text     = app.name,
-                style    = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                text     = displayName,
+                style    = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, lineHeight = 12.sp),
                 color    = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

@@ -1,0 +1,6 @@
+- `[x]` Update `AssistantApp` data model with `intent` and `parentIcon`
+- `[x]` Enhance `AppLoader.kt` to parse shortcut intents and store parent icons
+- `[x]` Implement icon badging in `AppIconItem.kt` and `AssistantAppRadioCard.kt`
+- `[x]` Refactor `CustomAppPickerBottomSheet.kt` to group shortcuts by app
+- `[x]` Update launch logic in `MainActivity.kt` and `AssistantOverlayActivity.kt`
+- `[x]` Verification of badges, grouping, and launching

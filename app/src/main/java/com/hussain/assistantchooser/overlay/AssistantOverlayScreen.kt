@@ -1,8 +1,16 @@
 package com.hussain.assistantchooser.overlay
 
+import android.app.role.RoleManager
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -15,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +33,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,13 +55,28 @@ fun AssistantOverlayScreen(
     overlaySource: OverlaySource,
     allApps: List<AssistantApp>,
     savedCustomPackages: List<String>,
-    onAppClick: (String) -> Unit,
+    onAppClick: (AssistantApp) -> Unit,
     onDismiss: () -> Unit,
     onOpenApp: () -> Unit,
     onSaveCustomApps: (List<String>) -> Unit,
     showAppName: Boolean,
-    themedIcons: Boolean
+    themedIcons: Boolean,
+    hasShortcutHostPermission: Boolean
 ) {
+    val context = LocalContext.current
+    val isDefaultAssistant = remember(context) {
+        val cm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
+        } else null
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && cm != null) {
+            cm.isRoleHeld(RoleManager.ROLE_ASSISTANT)
+        } else {
+            val assistant = Settings.Secure.getString(context.contentResolver, "assistant")
+            assistant?.contains(context.packageName) == true
+        }
+    }
+    
     val title = when (overlaySource) {
         OverlaySource.ASSISTANT_APPS -> "Voice Assistants"
         OverlaySource.CUSTOM_APPS    -> "Custom Apps"
@@ -77,6 +102,7 @@ fun AssistantOverlayScreen(
         CustomAppPickerBottomSheet(
             allApps          = allApps,
             selectedPackages = savedCustomPackages,
+            hasShortcutHostPermission = hasShortcutHostPermission,
             onDismiss        = { showPicker = false },
             onConfirm        = { selected ->
                 onSaveCustomApps(selected)
@@ -217,6 +243,43 @@ fun AssistantOverlayScreen(
                             .padding(horizontal = 10.dp)
                             .padding(top = 14.dp, bottom = 14.dp)
                     ) {
+                        AnimatedVisibility(
+                            visible = !isDefaultAssistant && !isLoading,
+                            enter = expandVertically(),
+                            exit = shrinkVertically()
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp)
+                                    .clickable {
+                                        context.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).apply {
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        })
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Warning,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(
+                                        "Shortcuts may not work. Tap to set as Default Assistant.",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                            }
+                        }
+
                         when {
                             isLoading -> {
                                 SkeletonOverlayGrid(
@@ -259,7 +322,7 @@ fun AssistantOverlayScreen(
                                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                                     verticalArrangement   = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    items(items = apps, key = { it.packageName }) { app ->
+                                    items(items = apps, key = { it.key }) { app ->
                                         AppIconItem(
                                             app         = app,
                                             showAppName = showAppName,
@@ -267,7 +330,7 @@ fun AssistantOverlayScreen(
                                             haptic      = haptic,
                                             onClick     = {
                                                 if (app.packageName == OWN_PACKAGE) onOpenApp()
-                                                else onAppClick(app.packageName)
+                                                else onAppClick(app)
                                             }
                                         )
                                     }
