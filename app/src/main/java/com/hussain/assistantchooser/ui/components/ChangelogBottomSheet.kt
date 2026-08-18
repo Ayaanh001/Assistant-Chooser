@@ -29,7 +29,7 @@ private val assistantChooserChangelog = listOf(
 
     ACChangelogVersion(
         version = "v1.4",
-        date = "20-05-2026",
+        date = "19-08-2026",
         sections = listOf(
             ACChangelogSection(
                 title = "Added",
