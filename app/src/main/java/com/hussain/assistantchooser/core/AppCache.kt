@@ -1,5 +1,6 @@
 package com.hussain.assistantchooser.core
 
+import com.hussain.assistantchooser.settings.GitHubRelease
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,7 +10,8 @@ object AppCache {
     data class CacheState(
         val assistantApps: List<AssistantApp> = emptyList(),
         val allApps: List<AssistantApp>       = emptyList(),
-        val isReady: Boolean                  = false
+        val isReady: Boolean                  = false,
+        val latestRelease: GitHubRelease?     = null
     )
 
     private val _state = MutableStateFlow(CacheState())
@@ -21,13 +23,18 @@ object AppCache {
     val assistantApps: List<AssistantApp> get() = _state.value.assistantApps
     val allApps: List<AssistantApp>       get() = _state.value.allApps
     val isReady: Boolean                  get() = _state.value.isReady
+    val latestRelease: GitHubRelease?     get() = _state.value.latestRelease
 
     /** Called from Application#onCreate on a background thread. */
     fun populate(assistantApps: List<AssistantApp>, allApps: List<AssistantApp>) {
-        _state.value = CacheState(
+        _state.value = _state.value.copy(
             assistantApps = assistantApps,
             allApps       = allApps,
             isReady       = true
         )
+    }
+
+    fun setLatestRelease(release: GitHubRelease?) {
+        _state.value = _state.value.copy(latestRelease = release)
     }
 }

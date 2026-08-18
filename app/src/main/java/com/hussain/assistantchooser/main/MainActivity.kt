@@ -31,6 +31,7 @@ import com.hussain.assistantchooser.R
 import com.hussain.assistantchooser.core.*
 import com.hussain.assistantchooser.data.launchAssistantForPackage
 import com.hussain.assistantchooser.services.QuickLaunchTileService
+import com.hussain.assistantchooser.settings.GitHubRelease
 import com.hussain.assistantchooser.settings.SettingsActivity
 import com.hussain.assistantchooser.ui.components.ChangelogBottomSheet
 import com.hussain.assistantchooser.ui.theme.AssistantChooserTheme
@@ -72,15 +73,34 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val prefs = remember { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
 
-            var showChangelog by remember {
+            var showSheet by remember {
                 mutableStateOf(prefs.getBoolean(KEY_FIRST_LAUNCH, true))
             }
 
-            if (showChangelog) {
-                ChangelogBottomSheet(onDismiss = {
-                    showChangelog = false
-                    prefs.edit().putBoolean(KEY_FIRST_LAUNCH, false).apply()
-                })
+            val updateRelease by viewModel.updateAvailable.collectAsStateWithLifecycle()
+
+            LaunchedEffect(updateRelease) {
+                if (updateRelease != null) {
+                    showSheet = true
+                }
+            }
+
+            if (showSheet) {
+                ChangelogBottomSheet(
+                    updateRelease = updateRelease,
+                    onDownloadClick = {
+                        runCatching {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW,
+                                    Uri.parse("https://github.com/Ayaanh001/Assistant-Chooser/releases/latest"))
+                            )
+                        }
+                    },
+                    onDismiss = {
+                        showSheet = false
+                        prefs.edit().putBoolean(KEY_FIRST_LAUNCH, false).apply()
+                    }
+                )
             }
 
             ObserveDefaultAssistant { pkg -> selectedPackage = pkg }

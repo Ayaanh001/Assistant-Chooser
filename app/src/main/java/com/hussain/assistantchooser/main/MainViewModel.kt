@@ -5,8 +5,15 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hussain.assistantchooser.BuildConfig
 import com.hussain.assistantchooser.core.*
+import com.hussain.assistantchooser.settings.GitHubRelease
+import com.hussain.assistantchooser.settings.checkLatestVersionFromGitHub
+import com.hussain.assistantchooser.settings.isNewerVersion
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -45,6 +52,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val appFilterMode: StateFlow<AppFilterMode> = _appFilterMode.asStateFlow()
 
+    val updateAvailable: StateFlow<GitHubRelease?> = AppCache.state
+        .map { it.latestRelease }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val assistantApps: StateFlow<List<AssistantApp>> = AppCache.state
         .map { it.assistantApps }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -73,6 +84,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         AppCache.state
             .onEach { if (it.isReady) _isLoading.value = false }
             .launchIn(viewModelScope)
+        checkForUpdates()
+    }
+
+    private fun checkForUpdates() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val latest = checkLatestVersionFromGitHub("Ayaanh001", "Assistant-Chooser")
+            val current = BuildConfig.VERSION_NAME
+            if (latest != null) {
+                val tag = latest.tagName.removePrefix("v")
+                if (isNewerVersion(tag, current)) {
+                    AppCache.setLatestRelease(latest)
+                } else {
+                    // Current version is up-to-date or newer, clear any pending update state
+                    AppCache.setLatestRelease(null)
+                }
+            }
+        }
     }
 
     override fun onCleared() {

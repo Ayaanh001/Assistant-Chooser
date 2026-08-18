@@ -35,9 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hussain.assistantchooser.BuildConfig
 import com.hussain.assistantchooser.R
-import com.hussain.assistantchooser.core.OverlaySource
-import com.hussain.assistantchooser.core.ThemeMode
-import com.hussain.assistantchooser.core.ThemedIconMode
+import com.hussain.assistantchooser.core.*
 import com.hussain.assistantchooser.ui.components.ChangelogBottomSheet
 import com.hussain.assistantchooser.ui.components.GroupSurface
 import kotlinx.coroutines.Dispatchers
@@ -220,7 +218,18 @@ fun SettingsScreen(
     }
 
     if (showChangelog) {
-        ChangelogBottomSheet(onDismiss = { showChangelog = false })
+        ChangelogBottomSheet(
+            updateRelease = AppCache.latestRelease,
+            onDownloadClick = {
+                runCatching {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW,
+                            Uri.parse("https://github.com/Ayaanh001/Assistant-Chooser/releases/latest"))
+                    )
+                }
+            },
+            onDismiss = { showChangelog = false }
+        )
     }
 
     if (showThemedSheet) {
@@ -528,19 +537,12 @@ fun SettingsScreen(
                                         if (latest == null) {
                                             snackbarState.showSnackbar("Failed to check updates")
                                         } else {
-                                            val tag = latest.removePrefix("v")
+                                            val tag = latest.tagName.removePrefix("v")
                                             if (isNewerVersion(tag, currentVersion)) {
-                                                val r = snackbarState.showSnackbar(
-                                                    "Update available: $tag", "Download",
-                                                    duration = SnackbarDuration.Indefinite
-                                                )
-                                                if (r == SnackbarResult.ActionPerformed) {
-                                                    context.startActivity(
-                                                        Intent(Intent.ACTION_VIEW,
-                                                            Uri.parse("https://github.com/Ayaanh001/Assistant-Chooser/releases/latest"))
-                                                    )
-                                                }
+                                                AppCache.setLatestRelease(latest)
+                                                showChangelog = true
                                             } else {
+                                                AppCache.setLatestRelease(null)
                                                 snackbarState.showSnackbar("No updates available")
                                             }
                                         }

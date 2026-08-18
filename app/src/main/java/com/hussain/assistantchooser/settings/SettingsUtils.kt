@@ -29,7 +29,12 @@ fun isNewerVersion(latest: String, current: String): Boolean {
     return false
 }
 
-suspend fun checkLatestVersionFromGitHub(owner: String, repo: String): String? = runCatching {
+data class GitHubRelease(
+    val tagName: String,
+    val body: String
+)
+
+suspend fun checkLatestVersionFromGitHub(owner: String, repo: String): GitHubRelease? = runCatching {
     val url  = URL("https://api.github.com/repos/$owner/$repo/releases/latest")
     val conn = (url.openConnection() as HttpURLConnection).apply {
         requestMethod = "GET"
@@ -38,9 +43,13 @@ suspend fun checkLatestVersionFromGitHub(owner: String, repo: String): String? =
         readTimeout    = 10_000
     }
     try {
-        if (conn.responseCode in 200..299)
-            JSONObject(conn.inputStream.bufferedReader().readText()).optString("tag_name", null)
-        else null
+        if (conn.responseCode in 200..299) {
+            val json = JSONObject(conn.inputStream.bufferedReader().readText())
+            GitHubRelease(
+                tagName = json.getString("tag_name"),
+                body = json.optString("body", "")
+            )
+        } else null
     } finally { conn.disconnect() }
 }.getOrNull()
 
