@@ -124,3 +124,9 @@ On some devices, tapping the **Google** app does not open Gemini as expected.
 2. Use the **Quick Settings tile** to open Assistant Chooser whenever you want to switch apps. This gives you fast access without changing the default.
 
 **Alternative**: If you don't need Gemini, set **Assistant Chooser** as the default assistant instead. In this mode, tapping Google will open Google Voice Search rather than Gemini, but all other assistant switching works normally.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
