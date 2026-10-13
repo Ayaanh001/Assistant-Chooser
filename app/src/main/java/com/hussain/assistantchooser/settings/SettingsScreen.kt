@@ -328,7 +328,6 @@ fun SettingsScreen(
                             themedIconMode = themedIconMode,
                             shape          = shape,
                             onClick        = {
-                                performHapticFeedback(context)
                                 showThemedSheet = true
                             }
                         )
@@ -394,7 +393,6 @@ fun SettingsScreen(
                             overlaySource = overlaySource,
                             shape         = shape,
                             onClick       = {
-                                performHapticFeedback(context)
                                 showSrcSheet = true
                             }
                         )
@@ -439,7 +437,6 @@ fun SettingsScreen(
                             title     = "Export Settings",
                             subtitle  = "Save your configurations to a file",
                             onClick   = {
-                                performHapticFeedback(context)
                                 showExportDialog = true
                             },
                             shape     = shape
@@ -450,7 +447,6 @@ fun SettingsScreen(
                             title     = "Import Settings",
                             subtitle  = "Restore configurations from a file",
                             onClick   = {
-                                performHapticFeedback(context)
                                 importLauncher.launch(arrayOf("*/*"))
                             },
                             shape     = shape
@@ -469,7 +465,6 @@ fun SettingsScreen(
                             title     = "Ayaan Hussain",
                             subtitle  = "Developer",
                             onClick   = {
-                                performHapticFeedback(context)
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Ayaanh001"))
                                 )
@@ -482,7 +477,6 @@ fun SettingsScreen(
                             title     = "GitHub",
                             subtitle  = "Source code repository",
                             onClick   = {
-                                performHapticFeedback(context)
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW,
                                         Uri.parse("https://github.com/Ayaanh001/Assistant-Chooser"))
@@ -496,7 +490,6 @@ fun SettingsScreen(
                             title     = "Telegram",
                             subtitle  = "Community & Support",
                             onClick   = {
-                                performHapticFeedback(context)
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/Ahacd1"))
                                 )
@@ -509,7 +502,6 @@ fun SettingsScreen(
                             title     = "Changelog",
                             subtitle  = "See what's new in this version",
                             onClick  = {
-                                performHapticFeedback(context)
                                 showChangelog = true
                             },
                             shape    = shape
