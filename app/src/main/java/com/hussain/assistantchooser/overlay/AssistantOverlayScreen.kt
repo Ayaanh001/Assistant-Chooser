@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -97,10 +98,13 @@ fun AssistantOverlayScreen(
             ),
         contentAlignment = Alignment.Center
     ) {
+        val isLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
         Card(
             modifier = Modifier
+                .safeDrawingPadding()
+                .padding(horizontal = 8.dp, vertical = 12.dp)
+                .then(if (isLandscape) Modifier.widthIn(max = 360.dp) else Modifier)
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
                 .scale(cardScale)
                 .shadow(
                     elevation    = 10.dp,
@@ -200,6 +204,7 @@ fun AssistantOverlayScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .weight(1f, fill = false)
                         .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
                         .shadow(
                             elevation    = 6.dp,
