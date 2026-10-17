@@ -4,7 +4,7 @@
     <!-- Splash screen theme (normal app launch only) -->
     <style name="Theme.AssistantChooser.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">?android:colorBackground</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_monochrome_tinted</item>
         <item name="windowSplashScreenAnimationDuration">0</item>
         <item name="postSplashScreenTheme">@style/Theme.AssistantChooser</item>
     </style>
