@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hussain.assistantchooser.R
@@ -81,28 +82,29 @@ fun AssistantChooserScreen(
                         DropdownMenu(
                             expanded         = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
-                            modifier         = Modifier.widthIn(min = 150.dp).offset(x = 4.dp),
-                            shape            = RoundedCornerShape(16.dp),
-                            tonalElevation   = 3.dp,
-                            shadowElevation  = 8.dp
+                            offset           = DpOffset(x = (-8).dp, y = 0.dp),
+                            modifier         = Modifier.widthIn(min = 130.dp).padding(horizontal = 8.dp),
+                            shape            = RoundedCornerShape(24.dp),
+                            containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh
                         ) {
-                            DropdownMenuItem(
-                                text        = { Text("Add Tile") },
-                                onClick     = { menuExpanded = false; onAddTileClicked() },
-                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                                modifier    = Modifier.clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 4.dp, bottomEnd = 4.dp))
-                            )
-                            HorizontalDivider(
-                                modifier  = Modifier.padding(start = 48.dp, end = 16.dp),
-                                thickness = 1.dp,
-                                color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
-                            DropdownMenuItem(
-                                text        = { Text("Settings") },
-                                onClick     = { menuExpanded = false; onSettingsClick() },
-                                leadingIcon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                                modifier    = Modifier.clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 12.dp, bottomEnd = 12.dp))
-                            )
+                            GroupSurface(count = 2) { index, shape ->
+                                when (index) {
+                                    0 -> DropdownMenuItem(
+                                        text           = { Text("Add Tile") },
+                                        onClick        = { menuExpanded = false; onAddTileClicked() },
+                                        leadingIcon    = { Icon(Icons.Default.Add, contentDescription = "Add") },
+                                        contentPadding = PaddingValues(start = 12.dp, end = 24.dp),
+                                        modifier       = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = shape).clip(shape)
+                                    )
+                                    1 -> DropdownMenuItem(
+                                        text           = { Text("Settings") },
+                                        onClick        = { menuExpanded = false; onSettingsClick() },
+                                        leadingIcon    = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                                        contentPadding = PaddingValues(start = 12.dp, end = 24.dp),
+                                        modifier       = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = shape).clip(shape)
+                                    )
+                                }
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
