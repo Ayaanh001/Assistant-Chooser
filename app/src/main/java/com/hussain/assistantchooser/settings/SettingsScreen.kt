@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hussain.assistantchooser.ui.components.CollapsingTopAppBar
 import com.hussain.assistantchooser.BuildConfig
 import com.hussain.assistantchooser.R
 import com.hussain.assistantchooser.core.OverlaySource
@@ -268,16 +270,17 @@ fun SettingsScreen(
         }
     }
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        rememberTopAppBarState()
+    )
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Settings",
-                        modifier = Modifier.padding(start = 12.dp),
-                        style    = MaterialTheme.typography.titleLarge
-                    )
-                },
+            CollapsingTopAppBar(
+                title               = "Settings",
+                scrollBehavior      = scrollBehavior,
+                collapsedTitleStart = 72.dp,   // back button (16 + 40) + 16 gap
                 navigationIcon = {
                     FilledIconButton(
                         onClick  = onBack,
@@ -294,10 +297,6 @@ fun SettingsScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                )
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarState) },
@@ -306,8 +305,8 @@ fun SettingsScreen(
         LazyColumn(
             modifier            = Modifier
                 .padding(pad)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .fillMaxSize(),
+            contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Theme section
