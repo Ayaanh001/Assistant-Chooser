@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.hussain.assistantchooser.R
 import com.hussain.assistantchooser.core.AppFilterMode
 import com.hussain.assistantchooser.core.AssistantApp
+import com.hussain.assistantchooser.ui.components.CollapsingTopAppBar
 import com.hussain.assistantchooser.ui.components.GroupSurface
 import com.hussain.assistantchooser.ui.components.SkeletonList
 import com.hussain.assistantchooser.ui.components.getGroupShape
@@ -60,61 +62,54 @@ fun AssistantChooserScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            Column {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text  = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    },
-                    actions = {
-                        IconButton(onClick = { showFilterDialog = true }) {
-                            Icon(Icons.Default.FilterAlt, contentDescription = "Filter")
-                        }
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        rememberTopAppBarState()
+    )
 
-                        var menuExpanded by remember { mutableStateOf(false) }
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More")
-                        }
-                        DropdownMenu(
-                            expanded         = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
-                            offset           = DpOffset(x = (-8).dp, y = 0.dp),
-                            modifier         = Modifier.widthIn(min = 130.dp).padding(horizontal = 8.dp),
-                            shape            = RoundedCornerShape(24.dp),
-                            containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh
-                        ) {
-                            GroupSurface(count = 2) { index, shape ->
-                                when (index) {
-                                    0 -> DropdownMenuItem(
-                                        text           = { Text("Add Tile") },
-                                        onClick        = { menuExpanded = false; onAddTileClicked() },
-                                        leadingIcon    = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                                        contentPadding = PaddingValues(start = 12.dp, end = 24.dp),
-                                        modifier       = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = shape).clip(shape)
-                                    )
-                                    1 -> DropdownMenuItem(
-                                        text           = { Text("Settings") },
-                                        onClick        = { menuExpanded = false; onSettingsClick() },
-                                        leadingIcon    = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                                        contentPadding = PaddingValues(start = 12.dp, end = 24.dp),
-                                        modifier       = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = shape).clip(shape)
-                                    )
-                                }
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            CollapsingTopAppBar(
+                title          = stringResource(R.string.app_name),
+                scrollBehavior = scrollBehavior,
+                actions = {
+                    IconButton(onClick = { showFilterDialog = true }) {
+                        Icon(Icons.Default.FilterAlt, contentDescription = "Filter")
+                    }
+
+                    var menuExpanded by remember { mutableStateOf(false) }
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More")
+                    }
+                    DropdownMenu(
+                        expanded         = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                        offset           = DpOffset(x = (-8).dp, y = 0.dp),
+                        modifier         = Modifier.widthIn(min = 130.dp).padding(horizontal = 8.dp),
+                        shape            = RoundedCornerShape(24.dp),
+                        containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ) {
+                        GroupSurface(count = 2) { index, shape ->
+                            when (index) {
+                                0 -> DropdownMenuItem(
+                                    text           = { Text("Add Tile") },
+                                    onClick        = { menuExpanded = false; onAddTileClicked() },
+                                    leadingIcon    = { Icon(Icons.Default.Add, contentDescription = "Add") },
+                                    contentPadding = PaddingValues(start = 12.dp, end = 24.dp),
+                                    modifier       = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = shape).clip(shape)
+                                )
+                                1 -> DropdownMenuItem(
+                                    text           = { Text("Settings") },
+                                    onClick        = { menuExpanded = false; onSettingsClick() },
+                                    leadingIcon    = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                                    contentPadding = PaddingValues(start = 12.dp, end = 24.dp),
+                                    modifier       = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = shape).clip(shape)
+                                )
                             }
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-                )
-                HorizontalDivider(
-                    color     = MaterialTheme.colorScheme.outlineVariant,
-                    thickness = 1.dp
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
+                    }
+                },
+            )
         },
         contentWindowInsets = WindowInsets.systemBars
     ) { innerPadding ->
@@ -195,6 +190,7 @@ fun AssistantChooserScreen(
                 // ── App list ─────────────────────────────────────────────────
                 LazyColumn(
                     modifier            = Modifier.weight(1f),
+                    contentPadding      = PaddingValues(top = 12.dp, bottom = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     if (isLoading) {
