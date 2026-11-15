@@ -46,8 +46,10 @@ fun AssistantChooserScreen(
     onAppClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
     onAddTileClicked: () -> Unit,
-    onSaveCustomApps: (List<String>) -> Unit,
     savedCustomApps: Set<String>,
+    appLists: List<com.hussain.assistantchooser.core.CustomAppList>,
+    activeListId: String?,
+    onSaveAllLists: (List<com.hussain.assistantchooser.core.CustomAppList>, String?) -> Unit,
     showPackageName: Boolean,
     themedIcons: Boolean,
 ) {
@@ -303,11 +305,12 @@ fun AssistantChooserScreen(
     // ── Custom App Picker Bottom Sheet ────────────────────────────────────────
     if (showCustomAppPicker) {
         CustomAppPickerBottomSheet(
-            allApps          = allApps,
-            selectedPackages = savedCustomApps.toList(),
-            onDismiss        = { showCustomAppPicker = false },
-            onConfirm        = { selected ->
-                onSaveCustomApps(selected)
+            allApps             = allApps,
+            initialAppLists     = appLists,
+            initialActiveListId = activeListId,
+            onDismiss           = { showCustomAppPicker = false },
+            onConfirm           = { newLists, newActiveId -> 
+                onSaveAllLists(newLists, newActiveId)
                 onAppFilterModeChange(AppFilterMode.CUSTOM_APPS)
                 showCustomAppPicker = false
             }

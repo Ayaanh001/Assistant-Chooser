@@ -54,6 +54,7 @@ fun AppIconItem(
             app.iconBitmap
         }
     }
+    val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed         by interactionSource.collectIsPressedAsState()
 
@@ -88,7 +89,7 @@ fun AppIconItem(
         verticalArrangement = Arrangement.Center
     ) {
         Image(
-            bitmap             = bitmap.asImageBitmap(),
+            bitmap             = imageBitmap,
             contentDescription = app.name,
             modifier           = Modifier
                 .size(iconSize)

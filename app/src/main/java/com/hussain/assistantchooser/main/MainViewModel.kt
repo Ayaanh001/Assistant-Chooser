@@ -15,10 +15,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _savedCustomApps = MutableStateFlow(
-        prefs.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet()
-    )
-    val savedCustomApps: StateFlow<Set<String>> = _savedCustomApps.asStateFlow()
+    val customAppListManager = CustomAppListManager(application)
+
+    val savedCustomApps: StateFlow<Set<String>> = combine(
+        customAppListManager.appLists,
+        customAppListManager.activeListId
+    ) { lists, activeId ->
+        lists.find { it.id == activeId }?.packages?.toSet() ?: emptySet()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     private val _themeMode = MutableStateFlow(
         ThemeMode.fromString(prefs.getString(KEY_THEME_MODE, null))
@@ -55,7 +59,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         when (key) {
-            KEY_CUSTOM_APPS -> _savedCustomApps.value = sharedPreferences.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet()
             KEY_THEME_MODE -> _themeMode.value = ThemeMode.fromString(sharedPreferences.getString(KEY_THEME_MODE, null))
             KEY_SHOW_PACKAGE_NAME -> _showPackageName.value = sharedPreferences.getBoolean(KEY_SHOW_PACKAGE_NAME, false)
             KEY_OPEN_APP -> _openApp.value = sharedPreferences.getBoolean(KEY_OPEN_APP, false)
@@ -81,7 +84,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun saveCustomApps(packages: List<String>) {
-        prefs.edit().putStringSet(KEY_CUSTOM_APPS, packages.toSet()).apply()
+        val activeId = customAppListManager.activeListId.value ?: return
+        val currentList = customAppListManager.appLists.value.find { it.id == activeId }
+        if (currentList != null) {
+            customAppListManager.updateList(currentList.copy(packages = packages))
+        } else {
+            val newList = customAppListManager.addList("My Apps")
+            customAppListManager.updateList(newList.copy(packages = packages))
+        }
     }
 
     fun setAppFilterMode(mode: AppFilterMode) {

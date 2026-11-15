@@ -22,8 +22,21 @@ object BackupUtils {
         root.put(BACKUP_IDENTIFIER, APP_ID_VALUE)
 
         if (exportCustomApps) {
+            val customAppListsStr = prefs.getString(KEY_CUSTOM_APP_LISTS, null)
+            if (customAppListsStr != null) {
+                root.put(KEY_CUSTOM_APP_LISTS, JSONArray(customAppListsStr))
+            }
+            
+            val activeListId = prefs.getString(KEY_ACTIVE_CUSTOM_LIST_ID, null)
+            if (activeListId != null) {
+                root.put(KEY_ACTIVE_CUSTOM_LIST_ID, activeListId)
+            }
+            
+            // Still export the old one for backward compatibility if needed, or if it exists
             val customApps = prefs.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet()
-            root.put(KEY_CUSTOM_APPS, JSONArray(customApps.toList()))
+            if (customApps.isNotEmpty()) {
+                root.put(KEY_CUSTOM_APPS, JSONArray(customApps.toList()))
+            }
         }
 
         if (exportSettings) {
@@ -60,7 +73,18 @@ object BackupUtils {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val edit = prefs.edit()
 
-        if (root.has(KEY_CUSTOM_APPS)) {
+        if (root.has(KEY_CUSTOM_APP_LISTS)) {
+            val arr = root.getJSONArray(KEY_CUSTOM_APP_LISTS)
+            edit.putString(KEY_CUSTOM_APP_LISTS, arr.toString())
+        }
+
+        if (root.has(KEY_ACTIVE_CUSTOM_LIST_ID)) {
+            edit.putString(KEY_ACTIVE_CUSTOM_LIST_ID, root.getString(KEY_ACTIVE_CUSTOM_LIST_ID))
+        }
+
+        // Backward compatibility: If the backup only has the old KEY_CUSTOM_APPS and not the new lists,
+        // we can still import it into the old key, and CustomAppListManager will migrate it on next load.
+        if (root.has(KEY_CUSTOM_APPS) && !root.has(KEY_CUSTOM_APP_LISTS)) {
             val arr = root.getJSONArray(KEY_CUSTOM_APPS)
             val set = mutableSetOf<String>()
             for (i in 0 until arr.length()) {

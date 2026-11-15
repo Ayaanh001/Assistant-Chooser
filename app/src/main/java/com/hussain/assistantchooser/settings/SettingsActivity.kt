@@ -76,6 +76,7 @@ class SettingsActivity : ComponentActivity() {
                     var overlaySrc by remember {
                         mutableStateOf(OverlaySource.fromString(prefs.getString(KEY_OVERLAY_SOURCE, null)))
                     }
+                    var swipeToChangeList by remember { mutableStateOf(prefs.getBoolean(KEY_SWIPE_TO_CHANGE_LIST, true)) }
 
                     SettingsScreen(
                         initialOpenApp              = openApp,
@@ -86,6 +87,7 @@ class SettingsActivity : ComponentActivity() {
                         initialOverlaySrc           = overlaySrc,
                         initialTileOpenOverlay      = tileOpenOverlay,
                         initialThemeMode            = themeMode,
+                        initialSwipeToChangeList    = swipeToChangeList,
                         onToggleOpenApp             = {
                             openApp = it
                             prefs.edit().putBoolean(KEY_OPEN_APP, it).apply()
@@ -114,6 +116,10 @@ class SettingsActivity : ComponentActivity() {
                             tileOpenOverlay = it
                             prefs.edit().putBoolean(KEY_TILE_OPEN_OVERLAY, it).apply()
                         },
+                        onToggleSwipeToChangeList   = {
+                            swipeToChangeList = it
+                            prefs.edit().putBoolean(KEY_SWIPE_TO_CHANGE_LIST, it).apply()
+                        },
                         onThemeModeChange           = {
                             themeMode = it
                             prefs.edit().putString(KEY_THEME_MODE, it.name).apply()
@@ -137,6 +143,7 @@ class SettingsActivity : ComponentActivity() {
                                 showAppName = prefs.getBoolean(KEY_SHOW_APP_NAME, showAppName)
                                 themedIconMode = ThemedIconMode.fromString(prefs.getString(KEY_THEMED_ICONS, null))
                                 tileOpenOverlay = prefs.getBoolean(KEY_TILE_OPEN_OVERLAY, tileOpenOverlay)
+                                swipeToChangeList = prefs.getBoolean(KEY_SWIPE_TO_CHANGE_LIST, swipeToChangeList)
                                 overlaySrc = OverlaySource.fromString(prefs.getString(KEY_OVERLAY_SOURCE, null))
                                 themeMode = ThemeMode.fromString(prefs.getString(KEY_THEME_MODE, null))
                                 

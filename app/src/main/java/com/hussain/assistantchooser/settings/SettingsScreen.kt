@@ -58,6 +58,7 @@ fun SettingsScreen(
     initialShowAppName: Boolean,
     initialTileOpenOverlay: Boolean,
     initialThemeMode: ThemeMode,
+    initialSwipeToChangeList: Boolean,
     onToggleOpenApp: (Boolean) -> Unit,
     onToggleCloseAfter: (Boolean) -> Unit,
     onToggleShowPackageName: (Boolean) -> Unit,
@@ -66,6 +67,7 @@ fun SettingsScreen(
     onToggleShowAppName: (Boolean) -> Unit,
     onToggleTileOpenOverlay: (Boolean) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
+    onToggleSwipeToChangeList: (Boolean) -> Unit,
     onExport: (exportCustomApps: Boolean, exportSettings: Boolean) -> Unit,
     onImport: (String) -> Unit,
     onBack: () -> Unit
@@ -78,6 +80,7 @@ fun SettingsScreen(
     var overlaySource by remember { mutableStateOf(initialOverlaySrc) }
     var showAppName   by remember { mutableStateOf(initialShowAppName) }
     var tileOpenOverlay by remember { mutableStateOf(initialTileOpenOverlay) }
+    var swipeToChangeList by remember { mutableStateOf(initialSwipeToChangeList) }
     var themeMode     by remember { mutableStateOf(initialThemeMode) }
 
     // Sync state when props change (e.g. after import)
@@ -385,7 +388,7 @@ fun SettingsScreen(
             // Overlay section
             item {
                 SectionLabel("Overlay")
-                GroupSurface(count = 3) { index, shape ->
+                GroupSurface(count = 4) { index, shape ->
                     when (index) {
                         0 -> OverlaySourceTile(
                             iconColor     = Color(0xFF673AB7),
@@ -418,6 +421,19 @@ fun SettingsScreen(
                                 performHapticFeedback(context)
                                 tileOpenOverlay = it
                                 onToggleTileOpenOverlay(it)
+                            },
+                            shape = shape
+                        )
+                        3 -> SettingTile(
+                            icon            = Icons.Default.Swipe,
+                            iconColor       = Color(0xFFE91E63),
+                            title           = "Swipe to change list",
+                            subtitle        = "Swipe left or right in custom apps overlay to switch lists",
+                            checked         = swipeToChangeList,
+                            onCheckedChange = {
+                                performHapticFeedback(context)
+                                swipeToChangeList = it
+                                onToggleSwipeToChangeList(it)
                             },
                             shape = shape
                         )

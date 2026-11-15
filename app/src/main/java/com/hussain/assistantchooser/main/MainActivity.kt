@@ -67,6 +67,9 @@ class MainActivity : ComponentActivity() {
             val allApps by viewModel.allApps.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
             val savedCustomApps by viewModel.savedCustomApps.collectAsStateWithLifecycle()
+            
+            val appLists by viewModel.customAppListManager.appLists.collectAsStateWithLifecycle()
+            val activeListId by viewModel.customAppListManager.activeListId.collectAsStateWithLifecycle()
 
             var selectedPackage by remember { mutableStateOf<String?>(null) }
             val context = LocalContext.current
@@ -119,8 +122,10 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     onAddTileClicked = { requestAddQuickSettingsTile() },
-                    onSaveCustomApps = { pkgs -> viewModel.saveCustomApps(pkgs) },
                     savedCustomApps = savedCustomApps,
+                    appLists = appLists,
+                    activeListId = activeListId,
+                    onSaveAllLists = { lists, activeId -> viewModel.customAppListManager.replaceAll(lists, activeId) },
                     showPackageName = showPackageName,
                     themedIcons = themedIconMode == ThemedIconMode.APP_ONLY || themedIconMode == ThemedIconMode.BOTH
                 )

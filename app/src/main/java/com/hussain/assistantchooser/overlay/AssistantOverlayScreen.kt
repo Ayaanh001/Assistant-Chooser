@@ -1,6 +1,17 @@
 package com.hussain.assistantchooser.overlay
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -45,25 +56,63 @@ fun AssistantOverlayScreen(
     isLoading: Boolean,
     overlaySource: OverlaySource,
     allApps: List<AssistantApp>,
-    savedCustomPackages: List<String>,
+    appLists: List<com.hussain.assistantchooser.core.CustomAppList>,
+    activeListId: String?,
+    swipeToChangeList: Boolean,
+    onSaveAllLists: (List<com.hussain.assistantchooser.core.CustomAppList>, String?) -> Unit,
+    onSetActiveListId: (String) -> Unit,
     onAppClick: (String) -> Unit,
     onDismiss: () -> Unit,
     onOpenApp: () -> Unit,
-    onSaveCustomApps: (List<String>) -> Unit,
     showAppName: Boolean,
     themedIcons: Boolean
 ) {
+    val initialPage = remember(appLists, activeListId) {
+        val index = appLists.indexOfFirst { it.id == activeListId }
+        if (index >= 0) index else 0
+    }
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { appLists.size.coerceAtLeast(1) })
+
     val title = when (overlaySource) {
         OverlaySource.ASSISTANT_APPS -> "Voice Assistants"
-        OverlaySource.CUSTOM_APPS    -> "Custom Apps"
+        OverlaySource.CUSTOM_APPS    -> {
+            if (swipeToChangeList && appLists.isNotEmpty()) {
+                val currentList = appLists.getOrNull(pagerState.currentPage)
+                currentList?.name ?: "Custom Apps"
+            } else {
+                val currentList = appLists.find { it.id == activeListId }
+                currentList?.name ?: "Custom Apps"
+            }
+        }
     }
     val isCustomMode = overlaySource == OverlaySource.CUSTOM_APPS
+
     val haptic       = LocalHapticFeedback.current
     var showPicker   by remember { mutableStateOf(false) }
 
     // Entrance animation
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
+
+    LaunchedEffect(showPicker) {
+        if (!showPicker) {
+            val index = appLists.indexOfFirst { it.id == activeListId }
+            if (index >= 0 && index != pagerState.currentPage) {
+                pagerState.scrollToPage(index)
+            }
+        }
+    }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collectLatest { page ->
+            if (isCustomMode && appLists.isNotEmpty() && page in appLists.indices) {
+                val listId = appLists[page].id
+                if (listId != activeListId) {
+                    onSetActiveListId(listId)
+                }
+            }
+        }
+    }
 
     val cardScale by animateFloatAsState(
         targetValue   = if (visible) 1f else 0.88f,
@@ -76,11 +125,12 @@ fun AssistantOverlayScreen(
 
     if (showPicker) {
         CustomAppPickerBottomSheet(
-            allApps          = allApps,
-            selectedPackages = savedCustomPackages,
-            onDismiss        = { showPicker = false },
-            onConfirm        = { selected ->
-                onSaveCustomApps(selected)
+            allApps             = allApps,
+            initialAppLists     = appLists,
+            initialActiveListId = activeListId,
+            onDismiss           = { showPicker = false },
+            onConfirm           = { newLists, newActiveId -> 
+                onSaveAllLists(newLists, newActiveId)
                 showPicker = false
             }
         )
@@ -135,13 +185,22 @@ fun AssistantOverlayScreen(
                         modifier          = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text       = title,
-                            style      = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color      = MaterialTheme.colorScheme.onSurface,
-                            modifier   = Modifier.weight(1f)
-                        )
+                        AnimatedContent(
+                            targetState = title,
+                            transitionSpec = {
+                                fadeIn(animationSpec = androidx.compose.animation.core.tween(200)) togetherWith
+                                    fadeOut(animationSpec = androidx.compose.animation.core.tween(200))
+                            },
+                            modifier = Modifier.weight(1f),
+                            label = "titleAnimation"
+                        ) { targetTitle ->
+                            Text(
+                                text       = targetTitle,
+                                style      = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color      = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
 
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -229,7 +288,56 @@ fun AssistantOverlayScreen(
                                     showAppName = showAppName
                                 )
                             }
-
+                            isCustomMode && swipeToChangeList && appLists.isNotEmpty() -> {
+                                HorizontalPager(
+                                    state = pagerState,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .animateContentSize(),
+                                    verticalAlignment = Alignment.Top
+                                ) { page ->
+                                    val list = appLists.getOrNull(page)
+                                    val pageApps = remember(list, allApps) {
+                                        if (list != null) {
+                                            allApps.filter { it.packageName in list.packages }
+                                        } else emptyList()
+                                    }
+                                    
+                                    if (pageApps.isEmpty()) {
+                                        Box(modifier = Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
+                                            Text(
+                                                text      = "No custom apps selected.\nTap + to build your list.",
+                                                style     = MaterialTheme.typography.bodyMedium,
+                                                color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    } else {
+                                        LazyVerticalGrid(
+                                            columns               = GridCells.Fixed(4),
+                                            modifier              = Modifier
+                                                .fillMaxWidth()
+                                                .heightIn(max = 360.dp),
+                                            contentPadding        = PaddingValues(vertical = 6.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                            verticalArrangement   = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            items(items = pageApps, key = { it.packageName }) { app ->
+                                                AppIconItem(
+                                                    app         = app,
+                                                    showAppName = showAppName,
+                                                    themedIcons = themedIcons,
+                                                    haptic      = haptic,
+                                                    onClick     = {
+                                                        if (app.packageName == OWN_PACKAGE) onOpenApp()
+                                                        else onAppClick(app.packageName)
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             apps.isEmpty() && isCustomMode -> {
                                 Text(
                                     text      = "No custom apps selected.\nTap + to build your list.",

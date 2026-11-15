@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,7 +21,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.foundation.lazy.itemsIndexed
+import java.util.Collections
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.SpanStyle
@@ -28,27 +37,117 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.hussain.assistantchooser.core.AssistantApp
+import com.hussain.assistantchooser.core.CustomAppList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomAppPickerBottomSheet(
     allApps: List<AssistantApp>,
-    selectedPackages: List<String>,
+    initialAppLists: List<CustomAppList>,
+    initialActiveListId: String?,
     onDismiss: () -> Unit,
-    onConfirm: (List<String>) -> Unit
+    onConfirm: (List<CustomAppList>, String?) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val selectedApps = remember {
-        mutableStateMapOf<String, Boolean>().apply {
-            selectedPackages.forEach { put(it, true) }
-        }
-    }
+
+    var localAppLists by remember { mutableStateOf(initialAppLists) }
+    var localActiveListId by remember { mutableStateOf(initialActiveListId) }
     var searchQuery       by remember { mutableStateOf("") }
     val focusManager      = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val listState         = rememberLazyListState()
+
+    var showNewListDialog by remember { mutableStateOf(false) }
+    var showEditListDialog by remember { mutableStateOf<CustomAppList?>(null) }
+    var listNameInput by remember { mutableStateOf("") }
+    
+    val haptic = LocalHapticFeedback.current
+    var draggedIndex by remember { mutableIntStateOf(-1) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+    val chipWidths = remember { mutableStateMapOf<String, Float>() }
+    val currentAppLists by rememberUpdatedState(localAppLists)
+
+    if (showNewListDialog) {
+        AlertDialog(
+            onDismissRequest = { showNewListDialog = false },
+            title = { Text("New List") },
+            text = {
+                OutlinedTextField(
+                    value = listNameInput,
+                    onValueChange = { listNameInput = it },
+                    label = { Text("List Name") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (listNameInput.isNotBlank()) {
+                            val newList = CustomAppList(name = listNameInput, packages = emptyList())
+                            localAppLists = localAppLists + newList
+                            localActiveListId = newList.id
+                        }
+                        showNewListDialog = false
+                    }
+                ) { Text("Create") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNewListDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showEditListDialog != null) {
+        val listToEdit = showEditListDialog!!
+        AlertDialog(
+            onDismissRequest = { showEditListDialog = null },
+            title = { Text("Edit List") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = listNameInput,
+                        onValueChange = { listNameInput = it },
+                        label = { Text("List Name") },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (listNameInput.isNotBlank()) {
+                            localAppLists = localAppLists.map { 
+                                if (it.id == listToEdit.id) it.copy(name = listNameInput) else it 
+                            }
+                        }
+                        showEditListDialog = null
+                    }
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                Row {
+                    if (localAppLists.size > 1) {
+                        TextButton(
+                            onClick = {
+                                localAppLists = localAppLists.filter { it.id != listToEdit.id }
+                                if (localActiveListId == listToEdit.id) {
+                                    localActiveListId = localAppLists.firstOrNull()?.id
+                                }
+                                showEditListDialog = null
+                            },
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) { Text("Delete") }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = { showEditListDialog = null }) { Text("Cancel") }
+                }
+            }
+        )
+    }
 
     // Dismiss keyboard when scrolling
     LaunchedEffect(listState.isScrollInProgress) {
@@ -58,9 +157,11 @@ fun CustomAppPickerBottomSheet(
         }
     }
 
-    val initialSorted = remember(allApps) {
+    val initialSorted = remember(allApps, localActiveListId) {
+        val currentList = localAppLists.find { it.id == localActiveListId }
+        val map = currentList?.packages?.associateWith { true } ?: emptyMap()
         allApps.sortedWith(
-            compareByDescending<AssistantApp> { selectedApps[it.packageName] == true }
+            compareByDescending<AssistantApp> { map[it.packageName] == true }
                 .thenBy { it.name.lowercase() }
         )
     }
@@ -80,6 +181,10 @@ fun CustomAppPickerBottomSheet(
         if (filteredApps.isNotEmpty() && (listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0)) {
             listState.scrollToItem(0)
         }
+    }
+
+    LaunchedEffect(localActiveListId) {
+        listState.scrollToItem(0)
     }
 
     ModalBottomSheet(
@@ -107,8 +212,6 @@ fun CustomAppPickerBottomSheet(
                                 fontWeight = FontWeight.Bold
                             )
                         }
-                        val focusManager = LocalFocusManager.current
-                        val keyboardController = LocalSoftwareKeyboardController.current
 
                         TextField(
                             value = searchQuery,
@@ -129,7 +232,15 @@ fun CustomAppPickerBottomSheet(
                                     ) {
                                         Icon(
                                             Icons.Default.Clear,
-                                            contentDescription = "Clear"
+                                            contentDescription = "Clear",
+                                            tint = MaterialTheme.colorScheme.surfaceVariant,
+                                            modifier = Modifier
+                                                .background(
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    shape = RoundedCornerShape(12.dp)
+                                                )
+                                                .padding(4.dp)
+                                                .size(14.dp)
                                         )
                                     }
                                 }
@@ -145,17 +256,136 @@ fun CustomAppPickerBottomSheet(
                             ),
                             shape = RoundedCornerShape(32.dp),
                             colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
                             )
                         )
+
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            itemsIndexed(localAppLists, key = { _, list -> list.id }) { index, list ->
+                                val currentIndex by rememberUpdatedState(index)
+                                val isDragged = draggedIndex == index
+                                
+                                val chipModifier = if (isDragged) {
+                                    Modifier
+                                        .zIndex(1f)
+                                        .graphicsLayer { translationX = dragOffset }
+                                } else {
+                                    Modifier
+                                        .animateItem()
+                                        .zIndex(0f)
+                                }
+
+                                FilterChip(
+                                    modifier = chipModifier
+                                        .onGloballyPositioned { chipWidths[list.id] = it.size.width.toFloat() }
+                                        .pointerInput(Unit) {
+                                            detectDragGesturesAfterLongPress(
+                                                onDragStart = {
+                                                    draggedIndex = currentIndex
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                },
+                                                onDrag = { change, dragAmount ->
+                                                    change.consume()
+                                                    dragOffset += dragAmount.x
+                                                    
+                                                    val listState = currentAppLists
+                                                    val curIdx = draggedIndex
+                                                    if (curIdx in listState.indices) {
+                                                        if (dragOffset > 0 && curIdx < listState.lastIndex) {
+                                                            val nextList = listState[curIdx + 1]
+                                                            val nextWidth = chipWidths[nextList.id] ?: 100.dp.toPx()
+                                                            if (dragOffset > nextWidth * 0.5f) {
+                                                                val newList = listState.toMutableList()
+                                                                Collections.swap(newList, curIdx, curIdx + 1)
+                                                                localAppLists = newList
+                                                                draggedIndex = curIdx + 1
+                                                                dragOffset = 0f
+                                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                            }
+                                                        } else if (dragOffset < 0 && curIdx > 0) {
+                                                            val prevList = listState[curIdx - 1]
+                                                            val prevWidth = chipWidths[prevList.id] ?: 100.dp.toPx()
+                                                            if (-dragOffset > prevWidth * 0.5f) {
+                                                                val newList = listState.toMutableList()
+                                                                Collections.swap(newList, curIdx, curIdx - 1)
+                                                                localAppLists = newList
+                                                                draggedIndex = curIdx - 1
+                                                                dragOffset = 0f
+                                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                onDragEnd = {
+                                                    draggedIndex = -1
+                                                    dragOffset = 0f
+                                                },
+                                                onDragCancel = {
+                                                    draggedIndex = -1
+                                                    dragOffset = 0f
+                                                }
+                                            )
+                                        },
+                                    selected = list.id == localActiveListId,
+                                    onClick = { localActiveListId = list.id },
+                                    label = { Text(list.name) },
+                                    shape = CircleShape,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    ),
+                                    border = null,
+                                    trailingIcon = {
+                                        if (list.id == localActiveListId) {
+                                            IconButton(
+                                                modifier = Modifier.size(18.dp),
+                                                onClick = {
+                                                    listNameInput = list.name
+                                                    showEditListDialog = list
+                                                }
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Edit,
+                                                    contentDescription = "Edit List",
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                            item {
+                                AssistChip(
+                                    onClick = {
+                                        listNameInput = ""
+                                        showNewListDialog = true
+                                    },
+                                    label = { Text("New List") },
+                                    shape = CircleShape,
+                                    colors = AssistChipDefaults.assistChipColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        leadingIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    ),
+                                    border = null,
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                                    }
+                                )
+                            }
+                        }
                     }
                 },
                 floatingActionButton = {
                     ExtendedFloatingActionButton(
                         modifier = Modifier.padding(bottom = 18.dp, end = 8.dp),
                         shape    = CircleShape,
-                        onClick  = { onConfirm(selectedApps.filterValues { it }.keys.toList()) },
+                        onClick  = { onConfirm(localAppLists, localActiveListId) },
                         icon     = { Icon(Icons.Default.Check, "Confirm") },
                         text     = { Text("Confirm") },
                     )
@@ -255,7 +485,19 @@ fun CustomAppPickerBottomSheet(
                                 .animateItem()
                                 .clip(animatedShape)
                                 .clickable {
-                                    selectedApps[app.packageName] = !(selectedApps[app.packageName] ?: false)
+                                    val currentList = localAppLists.find { it.id == localActiveListId }
+                                    if (currentList != null) {
+                                        val isCurrentlySelected = currentList.packages.contains(app.packageName)
+                                        val newPackages = if (isCurrentlySelected) {
+                                            currentList.packages - app.packageName
+                                        } else {
+                                            currentList.packages + app.packageName
+                                        }
+                                        localAppLists = localAppLists.map {
+                                            if (it.id == localActiveListId) it.copy(packages = newPackages) else it
+                                        }
+                                    }
+
                                     focusManager.clearFocus()
                                     keyboardController?.hide()
                                 }
@@ -266,9 +508,23 @@ fun CustomAppPickerBottomSheet(
                                 .padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val currentList = localAppLists.find { it.id == localActiveListId }
+                            val isChecked = currentList?.packages?.contains(app.packageName) ?: false
+                            
                             Checkbox(
-                                checked         = selectedApps[app.packageName] ?: false,
-                                onCheckedChange = { selectedApps[app.packageName] = it }
+                                checked         = isChecked,
+                                onCheckedChange = { checked ->
+                                    if (currentList != null) {
+                                        val newPackages = if (checked) {
+                                            currentList.packages + app.packageName
+                                        } else {
+                                            currentList.packages - app.packageName
+                                        }
+                                        localAppLists = localAppLists.map {
+                                            if (it.id == localActiveListId) it.copy(packages = newPackages) else it
+                                        }
+                                    }
+                                }
                             )
                             if (imageBitmap != null) {
                                 Image(

@@ -42,15 +42,22 @@ class AssistantOverlayActivity : ComponentActivity() {
                 val isLoading          by viewModel.isLoading.collectAsStateWithLifecycle()
                 val overlaySource      by viewModel.overlaySource.collectAsStateWithLifecycle()
                 val allApps            by viewModel.allApps.collectAsStateWithLifecycle()
-                val savedCustomPackages by viewModel.savedCustomPackages.collectAsStateWithLifecycle()
                 val themedIconMode     by viewModel.themedIconMode.collectAsStateWithLifecycle()
+
+                val appLists by viewModel.customAppListManager.appLists.collectAsStateWithLifecycle()
+                val activeListId by viewModel.customAppListManager.activeListId.collectAsStateWithLifecycle()
+                val swipeToChangeList by viewModel.swipeToChangeList.collectAsStateWithLifecycle()
 
                 AssistantOverlayScreen(
                     apps                = apps,
                     isLoading           = isLoading,
                     overlaySource       = overlaySource,
                     allApps             = allApps,
-                    savedCustomPackages = savedCustomPackages,
+                    appLists            = appLists,
+                    activeListId        = activeListId,
+                    swipeToChangeList   = swipeToChangeList,
+                    onSaveAllLists      = { lists, activeId -> viewModel.customAppListManager.replaceAll(lists, activeId) },
+                    onSetActiveListId   = { activeId -> viewModel.customAppListManager.setActiveListId(activeId) },
                     showAppName         = showAppName,
                     themedIcons         = themedIconMode == ThemedIconMode.OVERLAY_ONLY || themedIconMode == ThemedIconMode.BOTH,
                     onAppClick          = { pkg ->
@@ -69,7 +76,6 @@ class AssistantOverlayActivity : ComponentActivity() {
                     },
                     onDismiss           = { finish() },
                     onOpenApp           = { openFullApp() },
-                    onSaveCustomApps    = { viewModel.saveCustomApps(it) },
                 )
             }
         }

@@ -22,10 +22,14 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
     )
     val overlaySource: StateFlow<OverlaySource> = _overlaySource.asStateFlow()
 
-    private val _savedCustomPackages = MutableStateFlow(
-        (prefs.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet()).toList()
-    )
-    val savedCustomPackages: StateFlow<List<String>> = _savedCustomPackages.asStateFlow()
+    val customAppListManager = CustomAppListManager(application)
+
+    val savedCustomPackages: StateFlow<List<String>> = combine(
+        customAppListManager.appLists,
+        customAppListManager.activeListId
+    ) { lists, activeId ->
+        lists.find { it.id == activeId }?.packages ?: emptyList()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _themeMode = MutableStateFlow(
         ThemeMode.fromString(prefs.getString(KEY_THEME_MODE, null))
@@ -46,11 +50,14 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
     )
     val themedIconMode: StateFlow<ThemedIconMode> = _themedIconMode.asStateFlow()
 
+    private val _swipeToChangeList = MutableStateFlow(prefs.getBoolean(KEY_SWIPE_TO_CHANGE_LIST, true))
+    val swipeToChangeList: StateFlow<Boolean> = _swipeToChangeList.asStateFlow()
+
     // Fully reactive list of apps based on source and saved selection
     val apps: StateFlow<List<AssistantApp>> = combine(
         AppCache.state,
         _overlaySource,
-        _savedCustomPackages
+        savedCustomPackages
     ) { state, source, saved ->
         if (state.isReady) {
             _isLoading.value = false
@@ -69,9 +76,6 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
 
     private val preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         when (key) {
-            KEY_CUSTOM_APPS -> {
-                _savedCustomPackages.value = (sharedPreferences.getStringSet(KEY_CUSTOM_APPS, emptySet()) ?: emptySet()).toList()
-            }
             KEY_OVERLAY_SOURCE -> {
                 _overlaySource.value = OverlaySource.fromString(sharedPreferences.getString(KEY_OVERLAY_SOURCE, null))
             }
@@ -86,6 +90,9 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
             }
             KEY_CLOSE_AFTER_LAUNCH -> {
                 _closeAfter.value = sharedPreferences.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)
+            }
+            KEY_SWIPE_TO_CHANGE_LIST -> {
+                _swipeToChangeList.value = sharedPreferences.getBoolean(KEY_SWIPE_TO_CHANGE_LIST, true)
             }
             KEY_THEMED_ICONS -> {
                 _themedIconMode.value = ThemedIconMode.fromString(sharedPreferences.getString(KEY_THEMED_ICONS, null))
@@ -103,6 +110,13 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun saveCustomApps(packages: List<String>) {
-        prefs.edit().putStringSet(KEY_CUSTOM_APPS, packages.toSet()).apply()
+        val activeId = customAppListManager.activeListId.value ?: return
+        val currentList = customAppListManager.appLists.value.find { it.id == activeId }
+        if (currentList != null) {
+            customAppListManager.updateList(currentList.copy(packages = packages))
+        } else {
+            val newList = customAppListManager.addList("My Apps")
+            customAppListManager.updateList(newList.copy(packages = packages))
+        }
     }
 }
