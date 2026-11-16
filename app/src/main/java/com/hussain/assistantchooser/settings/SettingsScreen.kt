@@ -59,6 +59,7 @@ fun SettingsScreen(
     initialTileOpenOverlay: Boolean,
     initialThemeMode: ThemeMode,
     initialSwipeToChangeList: Boolean,
+    initialShowOverlaySwitch: Boolean = true,
     onToggleOpenApp: (Boolean) -> Unit,
     onToggleCloseAfter: (Boolean) -> Unit,
     onToggleShowPackageName: (Boolean) -> Unit,
@@ -68,6 +69,7 @@ fun SettingsScreen(
     onToggleTileOpenOverlay: (Boolean) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
     onToggleSwipeToChangeList: (Boolean) -> Unit,
+    onToggleShowOverlaySwitch: (Boolean) -> Unit = {},
     onExport: (exportCustomApps: Boolean, exportSettings: Boolean) -> Unit,
     onImport: (String) -> Unit,
     onBack: () -> Unit
@@ -81,6 +83,7 @@ fun SettingsScreen(
     var showAppName   by remember { mutableStateOf(initialShowAppName) }
     var tileOpenOverlay by remember { mutableStateOf(initialTileOpenOverlay) }
     var swipeToChangeList by remember { mutableStateOf(initialSwipeToChangeList) }
+    var showOverlaySwitch by remember { mutableStateOf(initialShowOverlaySwitch) }
     var themeMode     by remember { mutableStateOf(initialThemeMode) }
 
     // Sync state when props change (e.g. after import)
@@ -91,6 +94,8 @@ fun SettingsScreen(
     LaunchedEffect(initialOverlaySrc) { overlaySource = initialOverlaySrc }
     LaunchedEffect(initialShowAppName) { showAppName = initialShowAppName }
     LaunchedEffect(initialTileOpenOverlay) { tileOpenOverlay = initialTileOpenOverlay }
+    LaunchedEffect(initialSwipeToChangeList) { swipeToChangeList = initialSwipeToChangeList }
+    LaunchedEffect(initialShowOverlaySwitch) { showOverlaySwitch = initialShowOverlaySwitch }
     LaunchedEffect(initialThemeMode) { themeMode = initialThemeMode }
 
     var showSrcSheet  by remember { mutableStateOf(false) }
@@ -388,7 +393,7 @@ fun SettingsScreen(
             // Overlay section
             item {
                 SectionLabel("Overlay")
-                GroupSurface(count = 4) { index, shape ->
+                GroupSurface(count = 5) { index, shape ->
                     when (index) {
                         0 -> OverlaySourceTile(
                             iconColor     = Color(0xFF673AB7),
@@ -399,6 +404,19 @@ fun SettingsScreen(
                             }
                         )
                         1 -> SettingTile(
+                            icon            = Icons.Default.SwapHoriz,
+                            iconColor       = Color(0xFF9C27B0),
+                            title           = "Show switch source button",
+                            subtitle        = "Display button in overlay to switch between Assistant & Custom Apps",
+                            checked         = showOverlaySwitch,
+                            onCheckedChange = {
+                                performHapticFeedback(context)
+                                showOverlaySwitch = it
+                                onToggleShowOverlaySwitch(it)
+                            },
+                            shape = shape
+                        )
+                        2 -> SettingTile(
                             icon            = Icons.Default.Visibility,
                             iconColor       = Color(0xFF00BCD4),
                             title           = "Show app names",
@@ -411,7 +429,7 @@ fun SettingsScreen(
                             },
                             shape = shape
                         )
-                        2 -> SettingTile(
+                        3 -> SettingTile(
                             icon            = Icons.Default.ToggleOn,
                             iconColor       = Color(0xFFFF9800),
                             title           = "Tile opens Overlay",
@@ -424,7 +442,7 @@ fun SettingsScreen(
                             },
                             shape = shape
                         )
-                        3 -> SettingTile(
+                        4 -> SettingTile(
                             icon            = Icons.Default.Swipe,
                             iconColor       = Color(0xFFE91E63),
                             title           = "Swipe to change list",

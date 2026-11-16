@@ -53,6 +53,9 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
     private val _swipeToChangeList = MutableStateFlow(prefs.getBoolean(KEY_SWIPE_TO_CHANGE_LIST, true))
     val swipeToChangeList: StateFlow<Boolean> = _swipeToChangeList.asStateFlow()
 
+    private val _showOverlaySwitch = MutableStateFlow(prefs.getBoolean(KEY_SHOW_OVERLAY_SWITCH, true))
+    val showOverlaySwitch: StateFlow<Boolean> = _showOverlaySwitch.asStateFlow()
+
     // Fully reactive list of apps based on source and saved selection
     val apps: StateFlow<List<AssistantApp>> = combine(
         AppCache.state,
@@ -97,6 +100,9 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
             KEY_THEMED_ICONS -> {
                 _themedIconMode.value = ThemedIconMode.fromString(sharedPreferences.getString(KEY_THEMED_ICONS, null))
             }
+            KEY_SHOW_OVERLAY_SWITCH -> {
+                _showOverlaySwitch.value = sharedPreferences.getBoolean(KEY_SHOW_OVERLAY_SWITCH, true)
+            }
         }
     }
 
@@ -107,6 +113,11 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
     override fun onCleared() {
         super.onCleared()
         prefs.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener)
+    }
+
+    fun setOverlaySource(source: OverlaySource) {
+        prefs.edit().putString(KEY_OVERLAY_SOURCE, source.name).apply()
+        _overlaySource.value = source
     }
 
     fun saveCustomApps(packages: List<String>) {

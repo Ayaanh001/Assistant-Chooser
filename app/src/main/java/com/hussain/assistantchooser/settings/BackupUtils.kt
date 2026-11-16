@@ -47,6 +47,8 @@ object BackupUtils {
                 put(KEY_SHOW_APP_NAME, prefs.getBoolean(KEY_SHOW_APP_NAME, true))
                 put(KEY_THEMED_ICONS, prefs.getString(KEY_THEMED_ICONS, ThemedIconMode.OFF.name))
                 put(KEY_TILE_OPEN_OVERLAY, prefs.getBoolean(KEY_TILE_OPEN_OVERLAY, true))
+                put(KEY_SWIPE_TO_CHANGE_LIST, prefs.getBoolean(KEY_SWIPE_TO_CHANGE_LIST, true))
+                put(KEY_SHOW_OVERLAY_SWITCH, prefs.getBoolean(KEY_SHOW_OVERLAY_SWITCH, true))
                 put(KEY_THEME_MODE, prefs.getString(KEY_THEME_MODE, ThemeMode.AUTO.name))
             }
             root.put("app_settings", appSettings)
@@ -108,6 +110,9 @@ object BackupUtils {
                 }
             }
             if (appSettings.has(KEY_TILE_OPEN_OVERLAY)) edit.putBoolean(KEY_TILE_OPEN_OVERLAY, appSettings.getBoolean(KEY_TILE_OPEN_OVERLAY))
+            if (appSettings.has(KEY_SWIPE_TO_CHANGE_LIST)) edit.putBoolean(KEY_SWIPE_TO_CHANGE_LIST, appSettings.getBoolean(KEY_SWIPE_TO_CHANGE_LIST))
+            if (appSettings.has(KEY_SHOW_OVERLAY_SWITCH)) edit.putBoolean(KEY_SHOW_OVERLAY_SWITCH, appSettings.getBoolean(KEY_SHOW_OVERLAY_SWITCH))
+
             if (appSettings.has(KEY_THEME_MODE)) edit.putString(KEY_THEME_MODE, appSettings.getString(KEY_THEME_MODE))
         }
 

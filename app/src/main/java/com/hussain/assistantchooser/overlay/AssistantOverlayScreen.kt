@@ -25,7 +25,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,6 +61,8 @@ fun AssistantOverlayScreen(
     appLists: List<com.hussain.assistantchooser.core.CustomAppList>,
     activeListId: String?,
     swipeToChangeList: Boolean,
+    showOverlaySwitch: Boolean = true,
+    onOverlaySourceChange: (OverlaySource) -> Unit = {},
     onSaveAllLists: (List<com.hussain.assistantchooser.core.CustomAppList>, String?) -> Unit,
     onSetActiveListId: (String) -> Unit,
     onAppClick: (String) -> Unit,
@@ -206,6 +210,37 @@ fun AssistantOverlayScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment     = Alignment.CenterVertically
                         ) {
+                            if (showOverlaySwitch) {
+                                Box(
+                                    modifier = Modifier
+                                        .height(38.dp)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication        = ripple(),
+                                            onClick           = {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                val nextSource = if (overlaySource == OverlaySource.ASSISTANT_APPS) {
+                                                    OverlaySource.CUSTOM_APPS
+                                                } else {
+                                                    OverlaySource.ASSISTANT_APPS
+                                                }
+                                                onOverlaySourceChange(nextSource)
+                                            }
+                                        )
+                                        .padding(horizontal = 14.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector        = Icons.Default.SwapHoriz,
+                                        contentDescription = if (isCustomMode) "Switch to Voice Assistants" else "Switch to Custom Apps",
+                                        modifier           = Modifier.size(18.dp),
+                                        tint               = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
+                            }
+
                             if (isCustomMode) {
                                 Box(
                                     modifier = Modifier

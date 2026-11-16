@@ -47,6 +47,7 @@ class AssistantOverlayActivity : ComponentActivity() {
                 val appLists by viewModel.customAppListManager.appLists.collectAsStateWithLifecycle()
                 val activeListId by viewModel.customAppListManager.activeListId.collectAsStateWithLifecycle()
                 val swipeToChangeList by viewModel.swipeToChangeList.collectAsStateWithLifecycle()
+                val showOverlaySwitch by viewModel.showOverlaySwitch.collectAsStateWithLifecycle()
 
                 AssistantOverlayScreen(
                     apps                = apps,
@@ -56,6 +57,8 @@ class AssistantOverlayActivity : ComponentActivity() {
                     appLists            = appLists,
                     activeListId        = activeListId,
                     swipeToChangeList   = swipeToChangeList,
+                    showOverlaySwitch   = showOverlaySwitch,
+                    onOverlaySourceChange = { source -> viewModel.setOverlaySource(source) },
                     onSaveAllLists      = { lists, activeId -> viewModel.customAppListManager.replaceAll(lists, activeId) },
                     onSetActiveListId   = { activeId -> viewModel.customAppListManager.setActiveListId(activeId) },
                     showAppName         = showAppName,
