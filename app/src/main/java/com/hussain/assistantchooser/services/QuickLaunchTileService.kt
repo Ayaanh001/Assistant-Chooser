@@ -48,7 +48,7 @@ class QuickLaunchTileService : TileService() {
             state = Tile.STATE_ACTIVE
             label = getString(R.string.app_name)
             icon  = android.graphics.drawable.Icon.createWithResource(
-                this@QuickLaunchTileService, R.drawable.qs_tile
+                this@QuickLaunchTileService, R.drawable.ic_qs_tile
             )
             updateTile()
         }

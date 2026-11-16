@@ -164,7 +164,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         val statusBar = getSystemService(StatusBarManager::class.java) ?: return
-        val icon = runCatching { Icon.createWithResource(this, R.drawable.qs_tile) }
+        val icon = runCatching { Icon.createWithResource(this, R.drawable.ic_qs_tile) }
             .getOrElse { Icon.createWithResource(this, android.R.mipmap.sym_def_app_icon) }
         try {
             statusBar.requestAddTileService(
