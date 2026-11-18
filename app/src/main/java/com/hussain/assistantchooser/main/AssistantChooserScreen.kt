@@ -313,7 +313,8 @@ fun AssistantChooserScreen(
                 onSaveAllLists(newLists, newActiveId)
                 onAppFilterModeChange(AppFilterMode.CUSTOM_APPS)
                 showCustomAppPicker = false
-            }
+            },
+            onSaveAllLists      = onSaveAllLists
         )
     }
 }

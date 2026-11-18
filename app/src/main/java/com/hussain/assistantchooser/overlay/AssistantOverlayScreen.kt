@@ -143,7 +143,8 @@ fun AssistantOverlayScreen(
             onConfirm           = { newLists, newActiveId -> 
                 onSaveAllLists(newLists, newActiveId)
                 showPicker = false
-            }
+            },
+            onSaveAllLists      = onSaveAllLists
         )
     }
 

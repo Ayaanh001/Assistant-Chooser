@@ -70,6 +70,7 @@ fun CustomAppPickerBottomSheet(
     initialActiveListId: String?,
     onDismiss: () -> Unit,
     onConfirm: (List<CustomAppList>, String?) -> Unit,
+    onSaveAllLists: ((List<CustomAppList>, String?) -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -262,8 +263,10 @@ fun CustomAppPickerBottomSheet(
                             onDone = {
                                 if (listNameInput.text.isNotBlank()) {
                                     val newList = CustomAppList(name = listNameInput.text.trim(), packages = emptyList(), iconName = selectedIconName)
-                                    localAppLists = localAppLists + newList
+                                    val updatedLists = localAppLists + newList
+                                    localAppLists = updatedLists
                                     localActiveListId = newList.id
+                                    onSaveAllLists?.invoke(updatedLists, newList.id)
                                 }
                                 showNewListDialog = false
                             }
@@ -304,8 +307,10 @@ fun CustomAppPickerBottomSheet(
                     onClick = {
                         if (listNameInput.text.isNotBlank()) {
                             val newList = CustomAppList(name = listNameInput.text.trim(), packages = emptyList(), iconName = selectedIconName)
-                            localAppLists = localAppLists + newList
+                            val updatedLists = localAppLists + newList
+                            localAppLists = updatedLists
                             localActiveListId = newList.id
+                            onSaveAllLists?.invoke(updatedLists, newList.id)
                         }
                         showNewListDialog = false
                     }
@@ -340,9 +345,11 @@ fun CustomAppPickerBottomSheet(
                         keyboardActions = KeyboardActions(
                             onDone = {
                                 if (listNameInput.text.isNotBlank()) {
-                                    localAppLists = localAppLists.map {
+                                    val updatedLists = localAppLists.map {
                                         if (it.id == listToEdit.id) it.copy(name = listNameInput.text.trim(), iconName = selectedIconName) else it
                                     }
+                                    localAppLists = updatedLists
+                                    onSaveAllLists?.invoke(updatedLists, localActiveListId)
                                 }
                                 showEditListDialog = null
                             }
@@ -382,9 +389,11 @@ fun CustomAppPickerBottomSheet(
                 Button(
                     onClick = {
                         if (listNameInput.text.isNotBlank()) {
-                            localAppLists = localAppLists.map {
+                            val updatedLists = localAppLists.map {
                                 if (it.id == listToEdit.id) it.copy(name = listNameInput.text.trim(), iconName = selectedIconName) else it
                             }
+                            localAppLists = updatedLists
+                            onSaveAllLists?.invoke(updatedLists, localActiveListId)
                         }
                         showEditListDialog = null
                     }
@@ -406,10 +415,11 @@ fun CustomAppPickerBottomSheet(
                 Button(
                     onClick = {
                         if (localAppLists.size > 1) {
-                            localAppLists = localAppLists.filter { it.id != target.id }
-                            if (localActiveListId == target.id) {
-                                localActiveListId = localAppLists.firstOrNull()?.id
-                            }
+                            val updatedLists = localAppLists.filter { it.id != target.id }
+                            val updatedActiveId = if (localActiveListId == target.id) updatedLists.firstOrNull()?.id else localActiveListId
+                            localAppLists = updatedLists
+                            localActiveListId = updatedActiveId
+                            onSaveAllLists?.invoke(updatedLists, updatedActiveId)
                         }
                         listToDelete = null
                     },
@@ -730,7 +740,10 @@ fun CustomAppPickerBottomSheet(
                             if (isReorderMode) {
                                 run {
                                     Surface(
-                                        onClick = { isReorderMode = false },
+                                        onClick = {
+                                            isReorderMode = false
+                                            onSaveAllLists?.invoke(localAppLists, localActiveListId)
+                                        },
                                         shape = CircleShape,
                                         color = MaterialTheme.colorScheme.primary,
                                         contentColor = MaterialTheme.colorScheme.onPrimary,
