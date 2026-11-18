@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,7 +34,16 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.foundation.lazy.itemsIndexed
-import java.util.Collections
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.horizontalScroll
+import kotlin.math.PI
+import kotlin.math.sin
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
@@ -68,7 +78,7 @@ fun CustomAppPickerBottomSheet(
     var searchQuery       by remember { mutableStateOf("") }
     val focusManager      = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    val listState         = rememberLazyListState()
+    val listState         = remember(localActiveListId) { LazyListState() }
 
     var showNewListDialog by remember { mutableStateOf(false) }
     var showEditListDialog by remember { mutableStateOf<CustomAppList?>(null) }
@@ -77,23 +87,157 @@ fun CustomAppPickerBottomSheet(
     var isReorderMode by remember { mutableStateOf(false) }
     var listNameInput by remember { mutableStateOf(TextFieldValue("")) }
     var selectedIconName by remember { mutableStateOf("Apps") }
-    
+
     val haptic = LocalHapticFeedback.current
-    var draggedIndex by remember { mutableIntStateOf(-1) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-    val chipWidths = remember { mutableStateMapOf<String, Float>() }
+    val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
+    val chipScrollState = rememberScrollState()
     val currentAppLists by rememberUpdatedState(localAppLists)
 
-    val infiniteTransition = rememberInfiniteTransition(label = "jiggleTransition")
-    val rawJiggleAngle by infiniteTransition.animateFloat(
-        initialValue = -2.5f,
-        targetValue = 2.5f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 110, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "jiggleAngle"
-    )
+    // Reorder state. The list is NOT mutated while dragging: the dragged chip follows the finger
+    // (dragDelta = px from its own slot, in scrollable-content coordinates) and every other chip
+    // derives its shift from that. All chips stay composed (plain scrollable Row), so the dragged
+    // chip can never be disposed while its slot is scrolled off-screen.
+    var draggedKey by remember { mutableStateOf<String?>(null) }
+    var dragDelta by remember { mutableFloatStateOf(0f) }
+    var dragMoved by remember { mutableStateOf(false) }
+    var settling by remember { mutableStateOf(false) }
+    var lastTarget by remember { mutableIntStateOf(-1) }
+    var chipViewportWidth by remember { mutableFloatStateOf(0f) }
+    val chipWidths = remember { mutableStateMapOf<String, Float>() }
+    val chipStartPad = with(density) { 16.dp.toPx() }
+    val chipGap = with(density) { 8.dp.toPx() }
+    val dragScale = 1.06f
+
+    fun slotWidth(i: Int): Float = chipWidths[currentAppLists[i].id] ?: 0f
+    fun slotLeft(i: Int): Float {
+        var x = chipStartPad
+        for (k in 0 until i) x += slotWidth(k) + chipGap
+        return x
+    }
+
+    // Keeps the dragged chip between the first and last slot.
+    fun clampDelta(key: String, value: Float): Float {
+        val s = currentAppLists.indexOfFirst { it.id == key }
+        if (s < 0) return value
+        val last = currentAppLists.lastIndex
+        val minV = slotLeft(0) - slotLeft(s)
+        val maxV = slotLeft(last) + slotWidth(last) - slotWidth(s) - slotLeft(s)
+        return value.coerceIn(minV, maxV)
+    }
+
+    // How far (0..100%) a non-dragged chip has slid out of the way, proportional to finger movement.
+    fun neighborShift(index: Int, dragKey: String, delta: Float): Float {
+        val s = currentAppLists.indexOfFirst { it.id == dragKey }
+        if (s < 0 || s == index || index !in currentAppLists.indices) return 0f
+        val slot = slotWidth(s) + chipGap
+        val dLeft = slotLeft(s) + delta
+        val dRight = dLeft + slotWidth(s)
+        val l = slotLeft(index)
+        val w = slotWidth(index)
+        if (w <= 0f) return 0f
+        return if (index > s) -slot * ((dRight - l) / w).coerceIn(0f, 1f)
+        else slot * ((l + w - dLeft) / w).coerceIn(0f, 1f)
+    }
+
+    // Where the dragged chip lands if released now, and the offset that snaps it exactly into that slot.
+    fun resolveDrop(key: String, delta: Float): Pair<Int, Float>? {
+        val s = currentAppLists.indexOfFirst { it.id == key }
+        if (s < 0) return null
+        val ws = slotWidth(s)
+        val ls = slotLeft(s)
+        val dLeft = ls + delta
+        val dRight = dLeft + ws
+        var target = s
+        var snap = 0f
+        for (j in s + 1..currentAppLists.lastIndex) {
+            val l = slotLeft(j); val w = slotWidth(j)
+            if (w > 0f && (dRight - l) / w >= 0.5f) { target = j; snap = l + w - ws - ls }
+        }
+        if (target == s) {
+            for (j in s - 1 downTo 0) {
+                val l = slotLeft(j); val w = slotWidth(j)
+                if (w > 0f && (l + w - dLeft) / w >= 0.5f) { target = j; snap = l - ls }
+            }
+        }
+        return target to snap
+    }
+
+    fun notifyTarget(key: String) {
+        val t = resolveDrop(key, dragDelta)?.first ?: return
+        if (t != lastTarget) {
+            lastTarget = t
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+    }
+
+    fun finishDrag() {
+        val key = draggedKey ?: return
+        if (settling) return
+        settling = true
+        scope.launch {
+            try {
+                val result = resolveDrop(key, dragDelta)
+                if (result != null) {
+                    // glide into the slot; neighbours follow automatically because they derive from dragDelta
+                    Animatable(dragDelta).animateTo(
+                        result.second,
+                        spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium)
+                    ) { dragDelta = value }
+                }
+                val from = currentAppLists.indexOfFirst { it.id == key }
+                val to = result?.first ?: from
+                if (from >= 0 && to != from) {
+                    localAppLists = currentAppLists.toMutableList().apply { add(to, removeAt(from)) }
+                }
+            } finally {
+                draggedKey = null
+                dragDelta = 0f
+                dragMoved = false
+                settling = false
+            }
+        }
+    }
+
+    // Auto-scroll the chip row while the dragged chip is held near an edge.
+    LaunchedEffect(draggedKey) {
+        val key = draggedKey ?: return@LaunchedEffect
+        val edge = with(density) { 56.dp.toPx() }
+        val maxStep = with(density) { 14.dp.toPx() }
+        while (isActive) {
+            withFrameNanos { }
+            if (settling || !dragMoved) continue
+            val s = currentAppLists.indexOfFirst { it.id == key }
+            if (s < 0) continue
+            val left = slotLeft(s) + dragDelta - chipScrollState.value
+            val right = left + slotWidth(s)
+            val dx = when {
+                right > chipViewportWidth - edge ->
+                    ((right - (chipViewportWidth - edge)) / edge).coerceIn(0f, 1f) * maxStep
+                left < edge ->
+                    -((edge - left) / edge).coerceIn(0f, 1f) * maxStep
+                else -> 0f
+            }
+            if (dx != 0f) {
+                val consumed = chipScrollState.scrollBy(dx)
+                if (consumed != 0f) {
+                    // content moved under the finger, so move the chip with it
+                    dragDelta = clampDelta(key, dragDelta + consumed)
+                    notifyTarget(key)
+                }
+            }
+        }
+    }
+
+    // Jiggle clock: only ticks while reordering, so it costs nothing the rest of the time.
+    var jigglePhase by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(isReorderMode) {
+        if (isReorderMode) {
+            while (true) {
+                withFrameNanos { t -> jigglePhase = ((t / 1_000_000L) % 300L) / 300f }
+            }
+        }
+    }
 
     if (showNewListDialog) {
         val focusRequester = remember { FocusRequester() }
@@ -196,8 +340,8 @@ fun CustomAppPickerBottomSheet(
                         keyboardActions = KeyboardActions(
                             onDone = {
                                 if (listNameInput.text.isNotBlank()) {
-                                    localAppLists = localAppLists.map { 
-                                        if (it.id == listToEdit.id) it.copy(name = listNameInput.text.trim(), iconName = selectedIconName) else it 
+                                    localAppLists = localAppLists.map {
+                                        if (it.id == listToEdit.id) it.copy(name = listNameInput.text.trim(), iconName = selectedIconName) else it
                                     }
                                 }
                                 showEditListDialog = null
@@ -238,8 +382,8 @@ fun CustomAppPickerBottomSheet(
                 Button(
                     onClick = {
                         if (listNameInput.text.isNotBlank()) {
-                            localAppLists = localAppLists.map { 
-                                if (it.id == listToEdit.id) it.copy(name = listNameInput.text.trim(), iconName = selectedIconName) else it 
+                            localAppLists = localAppLists.map {
+                                if (it.id == listToEdit.id) it.copy(name = listNameInput.text.trim(), iconName = selectedIconName) else it
                             }
                         }
                         showEditListDialog = null
@@ -296,8 +440,8 @@ fun CustomAppPickerBottomSheet(
     }
 
     // Pre-convert ALL bitmaps once so LazyColumn items never do it during scroll
-    val imageBitmapCache = remember(initialSorted) {
-        initialSorted.associate { app -> app.packageName to app.iconBitmap.asImageBitmap() }
+    val imageBitmapCache = remember(allApps) {
+        allApps.associate { app -> app.packageName to app.iconBitmap.asImageBitmap() }
     }
 
     val filteredApps = remember(searchQuery, initialSorted) {
@@ -310,10 +454,6 @@ fun CustomAppPickerBottomSheet(
         if (filteredApps.isNotEmpty() && (listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0)) {
             listState.scrollToItem(0)
         }
-    }
-
-    LaunchedEffect(localActiveListId) {
-        listState.scrollToItem(0)
     }
 
     ModalBottomSheet(
@@ -396,218 +536,199 @@ fun CustomAppPickerBottomSheet(
                             )
                         )
 
-                        LazyRow(
-                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onSizeChanged { chipViewportWidth = it.width.toFloat() }
+                                .horizontalScroll(chipScrollState)
+                                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
 
-                            itemsIndexed(localAppLists, key = { _, list -> list.id }) { index, list ->
-                                val currentIndex by rememberUpdatedState(index)
-                                val isDragged = draggedIndex == index
-                                val rotationAngle = if (isReorderMode && !isDragged) {
-                                    if (index % 2 == 0) rawJiggleAngle else -rawJiggleAngle
-                                } else 0f
+                            localAppLists.forEachIndexed { index, list ->
+                                key(list.id) {
+                                    val isDragged = draggedKey == list.id
+                                    val isSelected = list.id == localActiveListId
 
-                                val chipModifier = if (isDragged) {
-                                    Modifier
-                                        .zIndex(2f)
+                                    val chipModifier = Modifier
+                                        .zIndex(if (isDragged) 2f else 0f)
                                         .graphicsLayer {
-                                            translationX = dragOffset
-                                            rotationZ = rotationAngle
+                                            val dragKey = draggedKey
+                                            if (dragKey == list.id) {
+                                                translationX = dragDelta
+                                                scaleX = dragScale
+                                                scaleY = dragScale
+                                            } else {
+                                                if (isReorderMode) {
+                                                    // each chip gets its own phase so they don't all shake in lockstep
+                                                    val offset = (list.id.hashCode() and 0xFF) / 255f
+                                                    rotationZ = sin((jigglePhase + offset) * 2f * PI.toFloat()) * 1.1f
+                                                }
+                                                if (dragKey != null) {
+                                                    translationX = neighborShift(index, dragKey, dragDelta)
+                                                }
+                                            }
                                         }
-                                } else {
-                                    Modifier
-                                        .animateItem()
-                                        .zIndex(0f)
-                                        .graphicsLayer {
-                                            rotationZ = rotationAngle
+
+                                    val chipTouchModifier = if (isReorderMode) {
+                                        Modifier.pointerInput(Unit) {
+                                            detectDragGesturesAfterLongPress(
+                                                onDragStart = {
+                                                    if (draggedKey == null && !settling) {
+                                                        draggedKey = list.id
+                                                        dragDelta = 0f
+                                                        lastTarget = currentAppLists.indexOfFirst { it.id == list.id }
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    }
+                                                },
+                                                onDrag = { change, dragAmount ->
+                                                    change.consume()
+                                                    if (!settling && draggedKey == list.id) {
+                                                        dragMoved = true
+                                                        // local deltas are shrunk by the chip's own scale, so undo that
+                                                        dragDelta = clampDelta(list.id, dragDelta + dragAmount.x * dragScale)
+                                                        notifyTarget(list.id)
+                                                    }
+                                                },
+                                                onDragEnd = { finishDrag() },
+                                                onDragCancel = { finishDrag() }
+                                            )
                                         }
-                                }
+                                    } else {
+                                        Modifier
+                                            .clip(CircleShape)
+                                            .combinedClickable(
+                                                onClick = { localActiveListId = list.id },
+                                                onLongClick = {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    menuListId = list.id
+                                                }
+                                            )
+                                    }
 
-                                val isSelected = list.id == localActiveListId
-
-                                val chipTouchModifier = if (isReorderMode) {
-                                    Modifier.pointerInput(Unit) {
-                                        detectDragGesturesAfterLongPress(
-                                            onDragStart = {
-                                                draggedIndex = currentIndex
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            },
-                                            onDrag = { change, dragAmount ->
-                                                change.consume()
-                                                dragOffset += dragAmount.x
-
-                                                val listState = currentAppLists
-                                                val curIdx = draggedIndex
-                                                if (curIdx in listState.indices) {
-                                                    if (dragOffset > 0 && curIdx < listState.lastIndex) {
-                                                        val nextList = listState[curIdx + 1]
-                                                        val nextWidth = chipWidths[nextList.id] ?: 100.dp.toPx()
-                                                        val spacing = 22.dp.toPx()
-                                                        if (dragOffset > (nextWidth + spacing) * 0.4f) {
-                                                            val newList = listState.toMutableList()
-                                                            Collections.swap(newList, curIdx, curIdx + 1)
-                                                            localAppLists = newList
-                                                            draggedIndex = curIdx + 1
-                                                            dragOffset -= (nextWidth + spacing)
-                                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                        }
-                                                    } else if (dragOffset < 0 && curIdx > 0) {
-                                                        val prevList = listState[curIdx - 1]
-                                                        val prevWidth = chipWidths[prevList.id] ?: 100.dp.toPx()
-                                                        val spacing = 22.dp.toPx()
-                                                        if (-dragOffset > (prevWidth + spacing) * 0.4f) {
-                                                            val newList = listState.toMutableList()
-                                                            Collections.swap(newList, curIdx, curIdx - 1)
-                                                            localAppLists = newList
-                                                            draggedIndex = curIdx - 1
-                                                            dragOffset += (prevWidth + spacing)
-                                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                        }
+                                    Box(
+                                        modifier = chipModifier
+                                            .onSizeChanged {
+                                                val w = it.width.toFloat()
+                                                if (chipWidths[list.id] != w) chipWidths[list.id] = w
+                                            }
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                            contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.height(32.dp).then(chipTouchModifier)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(
+                                                    start = 12.dp,
+                                                    end = if (isReorderMode) 8.dp else 16.dp,
+                                                    top = 6.dp,
+                                                    bottom = 6.dp
+                                                ),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = getListIconVector(list.iconName),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Text(
+                                                    text = list.name,
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                                )
+                                                if (isReorderMode) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(20.dp)
+                                                            .clip(CircleShape)
+                                                            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f))
+                                                            .clickable { listToDelete = list },
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Default.Close,
+                                                            contentDescription = "Delete List",
+                                                            tint = MaterialTheme.colorScheme.error,
+                                                            modifier = Modifier.size(12.dp)
+                                                        )
                                                     }
                                                 }
-                                            },
-                                            onDragEnd = {
-                                                draggedIndex = -1
-                                                dragOffset = 0f
-                                            },
-                                            onDragCancel = {
-                                                draggedIndex = -1
-                                                dragOffset = 0f
-                                            }
-                                        )
-                                    }
-                                } else {
-                                    Modifier
-                                        .clip(CircleShape)
-                                        .combinedClickable(
-                                            onClick = { localActiveListId = list.id },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuListId = list.id
-                                            }
-                                        )
-                                }
-
-                                Box(
-                                    modifier = chipModifier
-                                        .onGloballyPositioned { chipWidths[list.id] = it.size.width.toFloat() }
-                                ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                                        contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.height(32.dp).then(chipTouchModifier)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(
-                                                start = 12.dp,
-                                                end = if (isReorderMode) 8.dp else 16.dp,
-                                                top = 6.dp,
-                                                bottom = 6.dp
-                                            ),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = getListIconVector(list.iconName),
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Text(
-                                                text = list.name,
-                                                style = MaterialTheme.typography.labelLarge,
-                                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                            )
-                                            if (isReorderMode) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(20.dp)
-                                                        .clip(CircleShape)
-                                                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f))
-                                                        .clickable { listToDelete = list },
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Icon(
-                                                        Icons.Default.Close,
-                                                        contentDescription = "Delete List",
-                                                        tint = MaterialTheme.colorScheme.error,
-                                                        modifier = Modifier.size(12.dp)
-                                                    )
-                                                }
                                             }
                                         }
-                                    }
 
-                                    DropdownMenu(
-                                        expanded = menuListId == list.id,
-                                        onDismissRequest = { menuListId = null },
-                                        shape = RoundedCornerShape(24.dp),
-                                        modifier = Modifier.widthIn(min = 150.dp)
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = { Text("Reorder") },
-                                            leadingIcon = {
-                                                Box(modifier = Modifier.padding(start = 4.dp, end = 4.dp)) {
-                                                    Icon(
-                                                        Icons.Default.Reorder,
-                                                        contentDescription = null
-                                                    )
+                                        DropdownMenu(
+                                            expanded = menuListId == list.id,
+                                            onDismissRequest = { menuListId = null },
+                                            shape = RoundedCornerShape(24.dp),
+                                            modifier = Modifier.widthIn(min = 150.dp)
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text("Reorder") },
+                                                leadingIcon = {
+                                                    Box(modifier = Modifier.padding(start = 4.dp, end = 4.dp)) {
+                                                        Icon(
+                                                            Icons.Default.Reorder,
+                                                            contentDescription = null
+                                                        )
+                                                    }
+                                                },
+                                                onClick = {
+                                                    menuListId = null
+                                                    isReorderMode = true
                                                 }
-                                            },
-                                            onClick = {
-                                                menuListId = null
-                                                isReorderMode = true
-                                            }
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text("Edit") },
-                                            leadingIcon = {
-                                                Box(modifier = Modifier.padding(start = 4.dp, end = 4.dp)) {
-                                                    Icon(
-                                                        Icons.Default.Edit,
-                                                        contentDescription = null
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text("Edit") },
+                                                leadingIcon = {
+                                                    Box(modifier = Modifier.padding(start = 4.dp, end = 4.dp)) {
+                                                        Icon(
+                                                            Icons.Default.Edit,
+                                                            contentDescription = null
+                                                        )
+                                                    }
+                                                },
+                                                onClick = {
+                                                    menuListId = null
+                                                    selectedIconName = list.iconName
+                                                    listNameInput = TextFieldValue(
+                                                        text = list.name,
+                                                        selection = TextRange(list.name.length)
                                                     )
+                                                    showEditListDialog = list
                                                 }
-                                            },
-                                            onClick = {
-                                                menuListId = null
-                                                selectedIconName = list.iconName
-                                                listNameInput = TextFieldValue(
-                                                    text = list.name,
-                                                    selection = TextRange(list.name.length)
-                                                )
-                                                showEditListDialog = list
-                                            }
-                                        )
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    "Delete",
-                                                    color = if (localAppLists.size > 1) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                                )
-                                            },
-                                            leadingIcon = {
-                                                Box(modifier = Modifier.padding(start = 4.dp, end = 4.dp)) {
-                                                    Icon(
-                                                        Icons.Default.Delete,
-                                                        contentDescription = null,
-                                                        tint = if (localAppLists.size > 1) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                            )
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(
+                                                        "Delete",
+                                                        color = if (localAppLists.size > 1) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                                                     )
+                                                },
+                                                leadingIcon = {
+                                                    Box(modifier = Modifier.padding(start = 4.dp, end = 4.dp)) {
+                                                        Icon(
+                                                            Icons.Default.Delete,
+                                                            contentDescription = null,
+                                                            tint = if (localAppLists.size > 1) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                                        )
+                                                    }
+                                                },
+                                                enabled = localAppLists.size > 1,
+                                                onClick = {
+                                                    menuListId = null
+                                                    listToDelete = list
                                                 }
-                                            },
-                                            enabled = localAppLists.size > 1,
-                                            onClick = {
-                                                menuListId = null
-                                                listToDelete = list
-                                            }
-                                        )
+                                            )
+                                        }
                                     }
                                 }
                             }
                             if (isReorderMode) {
-                                item {
+                                run {
                                     Surface(
                                         onClick = { isReorderMode = false },
                                         shape = CircleShape,
@@ -634,7 +755,7 @@ fun CustomAppPickerBottomSheet(
                                     }
                                 }
                             } else {
-                                item {
+                                run {
                                     Surface(
                                         onClick = {
                                             selectedIconName = "Apps"
@@ -740,96 +861,99 @@ fun CustomAppPickerBottomSheet(
                         }
                     }
                 } else {
-                    LazyColumn(
-                        state               = listState,
-                        modifier            = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .padding(horizontal = 16.dp),
-                        contentPadding      = PaddingValues(bottom = 100.dp, top = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                    items(
-                        count = filteredApps.size,
-                        key   = { filteredApps[it].packageName }
-                    ) { index ->
-                        val app         = filteredApps[index]
-                        val imageBitmap = imageBitmapCache[app.packageName]
-
-                        // Animate corner radius to prevent "snapping" when list order changes during search
-                        val isTop = index == 0
-                        val isBottom = index == filteredApps.size - 1
-                        val topRadius by animateDpAsState(if (isTop) 24.dp else 8.dp, label = "top")
-                        val bottomRadius by animateDpAsState(if (isBottom) 24.dp else 8.dp, label = "bottom")
-                        val animatedShape = RoundedCornerShape(
-                            topStart = topRadius, topEnd = topRadius,
-                            bottomStart = bottomRadius, bottomEnd = bottomRadius
-                        )
-
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .animateItem()
-                                .clip(animatedShape)
-                                .clickable {
-                                    val currentList = localAppLists.find { it.id == localActiveListId }
-                                    if (currentList != null) {
-                                        val isCurrentlySelected = currentList.packages.contains(app.packageName)
-                                        val newPackages = if (isCurrentlySelected) {
-                                            currentList.packages - app.packageName
-                                        } else {
-                                            currentList.packages + app.packageName
-                                        }
-                                        localAppLists = localAppLists.map {
-                                            if (it.id == localActiveListId) it.copy(packages = newPackages) else it
-                                        }
-                                    }
-
-                                    focusManager.clearFocus()
-                                    keyboardController?.hide()
-                                }
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    shape = animatedShape
-                                )
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    key(localActiveListId) {
+                        LazyColumn(
+                            state               = listState,
+                            modifier            = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                                .padding(horizontal = 16.dp),
+                            contentPadding      = PaddingValues(bottom = 100.dp, top = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                            val currentList = localAppLists.find { it.id == localActiveListId }
-                            val isChecked = currentList?.packages?.contains(app.packageName) ?: false
-                            
-                            Checkbox(
-                                checked         = isChecked,
-                                onCheckedChange = { checked ->
-                                    if (currentList != null) {
-                                        val newPackages = if (checked) {
-                                            currentList.packages + app.packageName
-                                        } else {
-                                            currentList.packages - app.packageName
+                            items(
+                                count = filteredApps.size,
+                                key   = { "${localActiveListId}_${filteredApps[it].packageName}" }
+                            ) { index ->
+                            val app         = filteredApps[index]
+                            val imageBitmap = imageBitmapCache[app.packageName]
+
+                            // Corners follow the row's position instantly. Animating them made the
+                            // new first row's top corners "kick out" whenever the list was switched.
+                            val isTop = index == 0
+                            val isBottom = index == filteredApps.size - 1
+                            val itemShape = RoundedCornerShape(
+                                topStart = if (isTop) 24.dp else 8.dp,
+                                topEnd = if (isTop) 24.dp else 8.dp,
+                                bottomStart = if (isBottom) 24.dp else 8.dp,
+                                bottomEnd = if (isBottom) 24.dp else 8.dp
+                            )
+
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .animateItem(fadeInSpec = null, fadeOutSpec = null)
+                                    .clip(itemShape)
+                                    .clickable {
+                                        val currentList = localAppLists.find { it.id == localActiveListId }
+                                        if (currentList != null) {
+                                            val isCurrentlySelected = currentList.packages.contains(app.packageName)
+                                            val newPackages = if (isCurrentlySelected) {
+                                                currentList.packages - app.packageName
+                                            } else {
+                                                currentList.packages + app.packageName
+                                            }
+                                            localAppLists = localAppLists.map {
+                                                if (it.id == localActiveListId) it.copy(packages = newPackages) else it
+                                            }
                                         }
-                                        localAppLists = localAppLists.map {
-                                            if (it.id == localActiveListId) it.copy(packages = newPackages) else it
+
+                                        focusManager.clearFocus()
+                                        keyboardController?.hide()
+                                    }
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        shape = itemShape
+                                    )
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val currentList = localAppLists.find { it.id == localActiveListId }
+                                val isChecked = currentList?.packages?.contains(app.packageName) ?: false
+
+                                Checkbox(
+                                    checked         = isChecked,
+                                    onCheckedChange = { checked ->
+                                        if (currentList != null) {
+                                            val newPackages = if (checked) {
+                                                currentList.packages + app.packageName
+                                            } else {
+                                                currentList.packages - app.packageName
+                                            }
+                                            localAppLists = localAppLists.map {
+                                                if (it.id == localActiveListId) it.copy(packages = newPackages) else it
+                                            }
                                         }
                                     }
-                                }
-                            )
-                            if (imageBitmap != null) {
-                                Image(
-                                    bitmap             = imageBitmap,
-                                    contentDescription = app.name,
-                                    modifier           = Modifier.size(36.dp).clip(CircleShape)
                                 )
-                            } else {
-                                Spacer(Modifier.size(36.dp))
+                                if (imageBitmap != null) {
+                                    Image(
+                                        bitmap             = imageBitmap,
+                                        contentDescription = app.name,
+                                        modifier           = Modifier.size(36.dp).clip(CircleShape)
+                                    )
+                                } else {
+                                    Spacer(Modifier.size(36.dp))
+                                }
+                                Spacer(Modifier.width(16.dp))
+                                Text(text = app.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
-                            Spacer(Modifier.width(16.dp))
-                            Text(text = app.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
             }
 
-            // Fade gradient at bottom
+                // Fade gradient at bottom
 //            Box(
 //                modifier = Modifier
 //                    .align(Alignment.BottomCenter)
@@ -845,8 +969,8 @@ fun CustomAppPickerBottomSheet(
 //                        )
 //                    )
 //            )
+            }
         }
-    }
 
     }
 }
