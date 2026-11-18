@@ -7,12 +7,14 @@ import java.util.UUID
 data class CustomAppList(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
-    val packages: List<String>
+    val packages: List<String>,
+    val iconName: String = "Apps"
 ) {
     fun toJSONObject() = JSONObject().apply {
         put("id", id)
         put("name", name)
         put("packages", JSONArray(packages))
+        put("iconName", iconName)
     }
 
     companion object {
@@ -21,7 +23,8 @@ data class CustomAppList(
             name = json.optString("name", "Unnamed"),
             packages = json.optJSONArray("packages")?.let { arr ->
                 List(arr.length()) { arr.optString(it) }
-            } ?: emptyList()
+            } ?: emptyList(),
+            iconName = json.optString("iconName", "Apps")
         )
     }
 }
