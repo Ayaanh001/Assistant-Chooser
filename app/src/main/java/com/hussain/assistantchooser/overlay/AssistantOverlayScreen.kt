@@ -3,9 +3,12 @@ package com.hussain.assistantchooser.overlay
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.pager.PagerState
@@ -51,6 +54,8 @@ import com.hussain.assistantchooser.ui.components.SkeletonOverlayGrid
 
 private val OWN_PACKAGE = BuildConfig.APPLICATION_ID
 
+private data class TitleInfo(val text: String, val index: Int)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssistantOverlayScreen(
@@ -77,15 +82,17 @@ fun AssistantOverlayScreen(
     }
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { appLists.size.coerceAtLeast(1) })
 
-    val title = when (overlaySource) {
-        OverlaySource.ASSISTANT_APPS -> "Voice Assistants"
-        OverlaySource.CUSTOM_APPS    -> {
-            if (swipeToChangeList && appLists.isNotEmpty()) {
-                val currentList = appLists.getOrNull(pagerState.currentPage)
-                currentList?.name ?: "Custom Apps"
-            } else {
-                val currentList = appLists.find { it.id == activeListId }
-                currentList?.name ?: "Custom Apps"
+    val titleInfo = remember(overlaySource, appLists, activeListId, swipeToChangeList, pagerState.currentPage) {
+        when (overlaySource) {
+            OverlaySource.ASSISTANT_APPS -> TitleInfo("Voice Assistants", -1)
+            OverlaySource.CUSTOM_APPS    -> {
+                if (swipeToChangeList && appLists.isNotEmpty()) {
+                    val currentList = appLists.getOrNull(pagerState.currentPage)
+                    TitleInfo(currentList?.name ?: "Custom Apps", pagerState.currentPage)
+                } else {
+                    val currentList = appLists.find { it.id == activeListId }
+                    TitleInfo(currentList?.name ?: "Custom Apps", 0)
+                }
             }
         }
     }
@@ -190,16 +197,23 @@ fun AssistantOverlayScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         AnimatedContent(
-                            targetState = title,
+                            targetState = titleInfo,
                             transitionSpec = {
-                                fadeIn(animationSpec = androidx.compose.animation.core.tween(200)) togetherWith
-                                    fadeOut(animationSpec = androidx.compose.animation.core.tween(200))
+                                if (targetState.index > initialState.index) {
+                                    (slideInHorizontally(animationSpec = tween(300)) { width -> width } + fadeIn(animationSpec = tween(300))).togetherWith(
+                                        slideOutHorizontally(animationSpec = tween(300)) { width -> -width } + fadeOut(animationSpec = tween(300))
+                                    )
+                                } else {
+                                    (slideInHorizontally(animationSpec = tween(300)) { width -> -width } + fadeIn(animationSpec = tween(300))).togetherWith(
+                                        slideOutHorizontally(animationSpec = tween(300)) { width -> width } + fadeOut(animationSpec = tween(300))
+                                    )
+                                }
                             },
                             modifier = Modifier.weight(1f),
                             label = "titleAnimation"
-                        ) { targetTitle ->
+                        ) { targetTitleInfo ->
                             Text(
-                                text       = targetTitle,
+                                text       = targetTitleInfo.text,
                                 style      = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 color      = MaterialTheme.colorScheme.onSurface,
