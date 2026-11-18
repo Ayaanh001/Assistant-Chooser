@@ -36,6 +36,9 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
     )
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
+    private val _useSystemFont = MutableStateFlow(prefs.getBoolean(KEY_USE_SYSTEM_FONT, false))
+    val useSystemFont: StateFlow<Boolean> = _useSystemFont.asStateFlow()
+
     private val _showAppName = MutableStateFlow(prefs.getBoolean(KEY_SHOW_APP_NAME, true))
     val showAppName: StateFlow<Boolean> = _showAppName.asStateFlow()
 
@@ -84,6 +87,9 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
             }
             KEY_THEME_MODE -> {
                 _themeMode.value = ThemeMode.fromString(sharedPreferences.getString(KEY_THEME_MODE, null))
+            }
+            KEY_USE_SYSTEM_FONT -> {
+                _useSystemFont.value = sharedPreferences.getBoolean(KEY_USE_SYSTEM_FONT, false)
             }
             KEY_SHOW_APP_NAME -> {
                 _showAppName.value = sharedPreferences.getBoolean(KEY_SHOW_APP_NAME, true)

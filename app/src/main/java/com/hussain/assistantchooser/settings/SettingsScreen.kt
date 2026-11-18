@@ -58,6 +58,7 @@ fun SettingsScreen(
     initialShowAppName: Boolean,
     initialTileOpenOverlay: Boolean,
     initialThemeMode: ThemeMode,
+    initialUseSystemFont: Boolean = false,
     initialSwipeToChangeList: Boolean,
     initialShowOverlaySwitch: Boolean = true,
     onToggleOpenApp: (Boolean) -> Unit,
@@ -68,6 +69,7 @@ fun SettingsScreen(
     onToggleShowAppName: (Boolean) -> Unit,
     onToggleTileOpenOverlay: (Boolean) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
+    onToggleUseSystemFont: (Boolean) -> Unit = {},
     onToggleSwipeToChangeList: (Boolean) -> Unit,
     onToggleShowOverlaySwitch: (Boolean) -> Unit = {},
     onExport: (exportCustomApps: Boolean, exportSettings: Boolean) -> Unit,
@@ -85,6 +87,7 @@ fun SettingsScreen(
     var swipeToChangeList by remember { mutableStateOf(initialSwipeToChangeList) }
     var showOverlaySwitch by remember { mutableStateOf(initialShowOverlaySwitch) }
     var themeMode     by remember { mutableStateOf(initialThemeMode) }
+    var useSystemFont by remember { mutableStateOf(initialUseSystemFont) }
 
     // Sync state when props change (e.g. after import)
     LaunchedEffect(initialOpenApp) { openApp = initialOpenApp }
@@ -97,6 +100,7 @@ fun SettingsScreen(
     LaunchedEffect(initialSwipeToChangeList) { swipeToChangeList = initialSwipeToChangeList }
     LaunchedEffect(initialShowOverlaySwitch) { showOverlaySwitch = initialShowOverlaySwitch }
     LaunchedEffect(initialThemeMode) { themeMode = initialThemeMode }
+    LaunchedEffect(initialUseSystemFont) { useSystemFont = initialUseSystemFont }
 
     var showSrcSheet  by remember { mutableStateOf(false) }
     var showThemedSheet by remember { mutableStateOf(false) }
@@ -329,15 +333,30 @@ fun SettingsScreen(
                             onThemeModeChange(it)
                         }
                     )
-                    GroupSurface(count = 1) { index, shape ->
-                        ThemedIconTile(
-                            iconColor      = Color(0xFFE91E63),
-                            themedIconMode = themedIconMode,
-                            shape          = shape,
-                            onClick        = {
-                                showThemedSheet = true
-                            }
-                        )
+                    GroupSurface(count = 2) { index, shape ->
+                        when (index) {
+                            0 -> ThemedIconTile(
+                                iconColor      = Color(0xFFE91E63),
+                                themedIconMode = themedIconMode,
+                                shape          = shape,
+                                onClick        = {
+                                    showThemedSheet = true
+                                }
+                            )
+                            1 -> SettingTile(
+                                icon            = Icons.Default.TextFields,
+                                iconColor       = Color(0xFF009688),
+                                title           = "Use system font",
+                                subtitle        = "Use device's default system font instead of custom app font",
+                                checked         = useSystemFont,
+                                onCheckedChange = {
+                                    performHapticFeedback(context)
+                                    useSystemFont = it
+                                    onToggleUseSystemFont(it)
+                                },
+                                shape = shape
+                            )
+                        }
                     }
                 }
             }

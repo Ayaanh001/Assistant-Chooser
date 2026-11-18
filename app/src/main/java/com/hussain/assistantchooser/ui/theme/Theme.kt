@@ -18,6 +18,7 @@ import androidx.core.view.WindowCompat
 fun AssistantChooserTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    useSystemFont: Boolean = false,
     transparentBackground: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -53,9 +54,11 @@ fun AssistantChooserTheme(
         }
     }
 
+    val typography = if (useSystemFont) androidx.compose.material3.Typography() else Typography
+
     MaterialTheme(
         colorScheme = colorScheme,
-        typography  = Typography,
+        typography  = typography,
         content     = content
     )
 }

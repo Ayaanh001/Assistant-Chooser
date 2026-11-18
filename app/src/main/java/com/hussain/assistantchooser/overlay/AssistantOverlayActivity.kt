@@ -31,13 +31,14 @@ class AssistantOverlayActivity : ComponentActivity() {
 
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val useSystemFont by viewModel.useSystemFont.collectAsStateWithLifecycle()
             val darkTheme = when (themeMode) {
                 ThemeMode.AUTO -> isSystemInDarkTheme()
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
 
-            AssistantChooserTheme(darkTheme = darkTheme, transparentBackground = true) {
+            AssistantChooserTheme(darkTheme = darkTheme, useSystemFont = useSystemFont, transparentBackground = true) {
                 val apps               by viewModel.apps.collectAsStateWithLifecycle()
                 val isLoading          by viewModel.isLoading.collectAsStateWithLifecycle()
                 val overlaySource      by viewModel.overlaySource.collectAsStateWithLifecycle()

@@ -54,13 +54,17 @@ class SettingsActivity : ComponentActivity() {
                 mutableStateOf(ThemeMode.fromString(prefs.getString(KEY_THEME_MODE, null)))
             }
 
+            var useSystemFont by remember {
+                mutableStateOf(prefs.getBoolean(KEY_USE_SYSTEM_FONT, false))
+            }
+
             val darkTheme = when (themeMode) {
                 ThemeMode.AUTO -> isSystemInDarkTheme()
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
 
-            AssistantChooserTheme(darkTheme = darkTheme) {
+            AssistantChooserTheme(darkTheme = darkTheme, useSystemFont = useSystemFont) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -88,6 +92,7 @@ class SettingsActivity : ComponentActivity() {
                         initialOverlaySrc           = overlaySrc,
                         initialTileOpenOverlay      = tileOpenOverlay,
                         initialThemeMode            = themeMode,
+                        initialUseSystemFont        = useSystemFont,
                         initialSwipeToChangeList    = swipeToChangeList,
                         initialShowOverlaySwitch    = showOverlaySwitch,
                         onToggleOpenApp             = {
@@ -130,6 +135,10 @@ class SettingsActivity : ComponentActivity() {
                             themeMode = it
                             prefs.edit().putString(KEY_THEME_MODE, it.name).apply()
                         },
+                        onToggleUseSystemFont       = {
+                            useSystemFont = it
+                            prefs.edit().putBoolean(KEY_USE_SYSTEM_FONT, it).apply()
+                        },
                         onExport = { exportCustom, exportSettings ->
                             pendingExportJson = BackupUtils.createExportJson(
                                 this@SettingsActivity,
@@ -153,6 +162,7 @@ class SettingsActivity : ComponentActivity() {
                                 showOverlaySwitch = prefs.getBoolean(KEY_SHOW_OVERLAY_SWITCH, showOverlaySwitch)
                                 overlaySrc = OverlaySource.fromString(prefs.getString(KEY_OVERLAY_SOURCE, null))
                                 themeMode = ThemeMode.fromString(prefs.getString(KEY_THEME_MODE, null))
+                                useSystemFont = prefs.getBoolean(KEY_USE_SYSTEM_FONT, useSystemFont)
                                 
                                 Toast.makeText(this@SettingsActivity, "Settings imported successfully", Toast.LENGTH_SHORT).show()
                             } else {

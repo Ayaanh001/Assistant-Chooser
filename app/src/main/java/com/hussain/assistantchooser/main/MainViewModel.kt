@@ -29,6 +29,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
+    private val _useSystemFont = MutableStateFlow(prefs.getBoolean(KEY_USE_SYSTEM_FONT, false))
+    val useSystemFont: StateFlow<Boolean> = _useSystemFont.asStateFlow()
+
     private val _showPackageName = MutableStateFlow(prefs.getBoolean(KEY_SHOW_PACKAGE_NAME, false))
     val showPackageName: StateFlow<Boolean> = _showPackageName.asStateFlow()
 
@@ -60,6 +63,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         when (key) {
             KEY_THEME_MODE -> _themeMode.value = ThemeMode.fromString(sharedPreferences.getString(KEY_THEME_MODE, null))
+            KEY_USE_SYSTEM_FONT -> _useSystemFont.value = sharedPreferences.getBoolean(KEY_USE_SYSTEM_FONT, false)
             KEY_SHOW_PACKAGE_NAME -> _showPackageName.value = sharedPreferences.getBoolean(KEY_SHOW_PACKAGE_NAME, false)
             KEY_OPEN_APP -> _openApp.value = sharedPreferences.getBoolean(KEY_OPEN_APP, false)
             KEY_CLOSE_AFTER_LAUNCH -> _closeAfterLaunch.value = sharedPreferences.getBoolean(KEY_CLOSE_AFTER_LAUNCH, true)

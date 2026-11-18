@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
     private fun MainContent() {
         // Collect these with collectAsState() so they update even when in background
         val themeMode by viewModel.themeMode.collectAsState()
+        val useSystemFont by viewModel.useSystemFont.collectAsState()
         val appFilterMode by viewModel.appFilterMode.collectAsState()
         val showPackageName by viewModel.showPackageName.collectAsState()
         val openApp by viewModel.openApp.collectAsState()
@@ -62,7 +63,7 @@ class MainActivity : ComponentActivity() {
             ThemeMode.DARK -> true
         }
 
-        AssistantChooserTheme(darkTheme = darkTheme) {
+        AssistantChooserTheme(darkTheme = darkTheme, useSystemFont = useSystemFont) {
             val assistantApps by viewModel.assistantApps.collectAsStateWithLifecycle()
             val allApps by viewModel.allApps.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
