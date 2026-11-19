@@ -12,6 +12,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussain.assistantchooser.core.*
 import com.hussain.assistantchooser.data.launchAssistantForPackage
+import androidx.activity.enableEdgeToEdge
 import com.hussain.assistantchooser.main.MainActivity
 import com.hussain.assistantchooser.ui.theme.AssistantChooserTheme
 
@@ -21,6 +22,7 @@ class AssistantOverlayActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.setBackgroundDrawableResource(android.R.color.transparent)
 
