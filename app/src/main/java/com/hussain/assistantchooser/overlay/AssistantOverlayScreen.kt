@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -99,7 +100,7 @@ fun AssistantOverlayScreen(
     val isCustomMode = overlaySource == OverlaySource.CUSTOM_APPS
 
     val haptic       = LocalHapticFeedback.current
-    var showPicker   by remember { mutableStateOf(false) }
+    var showPicker   by rememberSaveable { mutableStateOf(false) }
 
     // Entrance animation
     var visible by remember { mutableStateOf(false) }

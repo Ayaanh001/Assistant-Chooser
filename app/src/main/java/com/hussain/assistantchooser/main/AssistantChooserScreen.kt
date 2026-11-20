@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,8 +55,8 @@ fun AssistantChooserScreen(
     themedIcons: Boolean,
 ) {
     val context = LocalContext.current
-    var showFilterDialog    by remember { mutableStateOf(false) }
-    var showCustomAppPicker by remember { mutableStateOf(false) }
+    var showFilterDialog    by rememberSaveable { mutableStateOf(false) }
+    var showCustomAppPicker by rememberSaveable { mutableStateOf(false) }
 
     val currentAppList = remember(appFilterMode, savedCustomApps, voiceAssistants, allApps) {
         when (appFilterMode) {
