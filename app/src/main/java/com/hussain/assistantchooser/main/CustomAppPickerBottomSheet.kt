@@ -1,66 +1,160 @@
 package com.hussain.assistantchooser.main
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DirectionsBike
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Laptop
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Reorder
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Train
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.zIndex
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.gestures.scrollBy
-import androidx.compose.foundation.horizontalScroll
-import kotlin.math.PI
-import kotlin.math.sin
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.hussain.assistantchooser.core.AssistantApp
 import com.hussain.assistantchooser.core.CustomAppList
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlin.math.PI
+import kotlin.math.sin
+
+enum class MenuAction(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    REORDER("Reorder", Icons.Default.Reorder),
+    EDIT("Edit", Icons.Default.Edit),
+    DELETE("Delete", Icons.Default.Delete)
+}
+
+data class DragMenuState(
+    val list: CustomAppList,
+    val chipBounds: Rect,
+    val startPos: Offset = Offset.Zero,
+    val fingerPos: Offset? = null,
+    val isStatic: Boolean = false
+)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -84,7 +178,8 @@ fun CustomAppPickerBottomSheet(
     var showNewListDialog by remember { mutableStateOf(false) }
     var showEditListDialog by remember { mutableStateOf<CustomAppList?>(null) }
     var listToDelete by remember { mutableStateOf<CustomAppList?>(null) }
-    var menuListId by remember { mutableStateOf<String?>(null) }
+    var dragMenuState by remember { mutableStateOf<DragMenuState?>(null) }
+    val itemBounds = remember { mutableStateMapOf<MenuAction, Rect>() }
     var isReorderMode by remember { mutableStateOf(false) }
     var listNameInput by remember { mutableStateOf(TextFieldValue("")) }
     var selectedIconName by remember { mutableStateOf("Apps") }
@@ -473,11 +568,43 @@ fun CustomAppPickerBottomSheet(
         modifier         = Modifier.fillMaxSize(),
         dragHandle       = { BottomSheetDefaults.DragHandle() }
     ) {
-        BackHandler(enabled = isReorderMode) {
-            isReorderMode = false
+        BackHandler(enabled = isReorderMode || dragMenuState != null) {
+            if (dragMenuState != null) {
+                dragMenuState = null
+            } else if (isReorderMode) {
+                isReorderMode = false
+            }
         }
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        var containerSize by remember { mutableStateOf(IntSize.Zero) }
+
+        fun handleMenuAction(action: MenuAction, list: CustomAppList) {
+            when (action) {
+                MenuAction.REORDER -> {
+                    isReorderMode = true
+                }
+                MenuAction.EDIT -> {
+                    selectedIconName = list.iconName
+                    listNameInput = TextFieldValue(
+                        text = list.name,
+                        selection = TextRange(list.name.length)
+                    )
+                    showEditListDialog = list
+                }
+                MenuAction.DELETE -> {
+                    listToDelete = list
+                }
+            }
+        }
+
+        var containerCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .onGloballyPositioned { containerCoords = it }
+                .onSizeChanged { containerSize = it }
+        ) {
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 topBar = {
@@ -581,6 +708,8 @@ fun CustomAppPickerBottomSheet(
                                             }
                                         }
 
+                                    var chipCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+
                                     val chipTouchModifier = if (isReorderMode) {
                                         Modifier.pointerInput(Unit) {
                                             detectDragGesturesAfterLongPress(
@@ -596,7 +725,6 @@ fun CustomAppPickerBottomSheet(
                                                     change.consume()
                                                     if (!settling && draggedKey == list.id) {
                                                         dragMoved = true
-                                                        // local deltas are shrunk by the chip's own scale, so undo that
                                                         dragDelta = clampDelta(list.id, dragDelta + dragAmount.x * dragScale)
                                                         notifyTarget(list.id)
                                                     }
@@ -607,14 +735,71 @@ fun CustomAppPickerBottomSheet(
                                         }
                                     } else {
                                         Modifier
-                                            .clip(CircleShape)
-                                            .combinedClickable(
-                                                onClick = { localActiveListId = list.id },
-                                                onLongClick = {
-                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    menuListId = list.id
-                                                }
-                                            )
+                                            .onGloballyPositioned { chipCoords = it }
+                                            .pointerInput(list.id) {
+                                                var lastHover: MenuAction? = null
+                                                detectDragGesturesAfterLongPress(
+                                                    onDragStart = { offset ->
+                                                        lastHover = null
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        val containerPos = if (containerCoords != null && chipCoords != null) {
+                                                            containerCoords!!.localPositionOf(chipCoords!!, offset)
+                                                        } else offset
+                                                        val bounds = if (containerCoords != null && chipCoords != null) {
+                                                            containerCoords!!.localBoundingBoxOf(chipCoords!!)
+                                                        } else Rect.Zero
+                                                        dragMenuState = DragMenuState(list, bounds, containerPos, containerPos)
+                                                    },
+                                                    onDrag = { change, _ ->
+                                                        change.consume()
+                                                        val containerPos = if (containerCoords != null && chipCoords != null) {
+                                                            containerCoords!!.localPositionOf(chipCoords!!, change.position)
+                                                        } else change.position
+                                                        dragMenuState = dragMenuState?.copy(fingerPos = containerPos)
+                                                        val hovered = itemBounds.entries.firstOrNull { it.value.contains(containerPos) }?.key
+                                                        if (hovered != lastHover) {
+                                                            if (hovered != null) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                            lastHover = hovered
+                                                        }
+                                                    },
+                                                    onDragEnd = {
+                                                        val currentPos = dragMenuState?.fingerPos
+                                                        val startPos = dragMenuState?.startPos ?: Offset.Zero
+
+                                                        if (currentPos != null) {
+                                                            val hoveredAction = itemBounds.entries.firstOrNull { it.value.contains(currentPos) }?.key
+                                                            if (hoveredAction != null) {
+                                                                handleMenuAction(hoveredAction, dragMenuState!!.list)
+                                                                dragMenuState = null
+                                                            } else {
+                                                                val dist = (currentPos - startPos).getDistance()
+                                                                if (dist < with(density) { 50.dp.toPx() }) {
+                                                                    // Finger didn't move much, keep menu open
+                                                                    dragMenuState = dragMenuState?.copy(fingerPos = null, isStatic = true)
+                                                                } else {
+                                                                    dragMenuState = null
+                                                                }
+                                                            }
+                                                        } else {
+                                                            dragMenuState = null
+                                                        }
+                                                    },
+                                                    onDragCancel = {
+                                                        val currentPos = dragMenuState?.fingerPos
+                                                        val startPos = dragMenuState?.startPos ?: Offset.Zero
+                                                        if (currentPos != null && (currentPos - startPos).getDistance() < with(density) { 50.dp.toPx() }) {
+                                                            dragMenuState = dragMenuState?.copy(fingerPos = null, isStatic = true)
+                                                        } else {
+                                                            dragMenuState = null
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                            .pointerInput(list.id, "tap") {
+                                                detectTapGestures(
+                                                    onTap = { localActiveListId = list.id }
+                                                )
+                                            }
                                     }
 
                                     Box(
@@ -668,71 +853,6 @@ fun CustomAppPickerBottomSheet(
                                                     }
                                                 }
                                             }
-                                        }
-
-                                        DropdownMenu(
-                                            expanded = menuListId == list.id,
-                                            onDismissRequest = { menuListId = null },
-                                            shape = RoundedCornerShape(24.dp),
-                                            modifier = Modifier.widthIn(min = 150.dp)
-                                        ) {
-                                            DropdownMenuItem(
-                                                text = { Text("Reorder") },
-                                                leadingIcon = {
-                                                    Box(modifier = Modifier.padding(start = 4.dp, end = 4.dp)) {
-                                                        Icon(
-                                                            Icons.Default.Reorder,
-                                                            contentDescription = null
-                                                        )
-                                                    }
-                                                },
-                                                onClick = {
-                                                    menuListId = null
-                                                    isReorderMode = true
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("Edit") },
-                                                leadingIcon = {
-                                                    Box(modifier = Modifier.padding(start = 4.dp, end = 4.dp)) {
-                                                        Icon(
-                                                            Icons.Default.Edit,
-                                                            contentDescription = null
-                                                        )
-                                                    }
-                                                },
-                                                onClick = {
-                                                    menuListId = null
-                                                    selectedIconName = list.iconName
-                                                    listNameInput = TextFieldValue(
-                                                        text = list.name,
-                                                        selection = TextRange(list.name.length)
-                                                    )
-                                                    showEditListDialog = list
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = {
-                                                    Text(
-                                                        "Delete",
-                                                        color = if (localAppLists.size > 1) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                                    )
-                                                },
-                                                leadingIcon = {
-                                                    Box(modifier = Modifier.padding(start = 4.dp, end = 4.dp)) {
-                                                        Icon(
-                                                            Icons.Default.Delete,
-                                                            contentDescription = null,
-                                                            tint = if (localAppLists.size > 1) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                                        )
-                                                    }
-                                                },
-                                                enabled = localAppLists.size > 1,
-                                                onClick = {
-                                                    menuListId = null
-                                                    listToDelete = list
-                                                }
-                                            )
                                         }
                                     }
                                 }
@@ -888,83 +1008,83 @@ fun CustomAppPickerBottomSheet(
                                 count = filteredApps.size,
                                 key   = { "${localActiveListId}_${filteredApps[it].packageName}" }
                             ) { index ->
-                            val app         = filteredApps[index]
-                            val imageBitmap = imageBitmapCache[app.packageName]
+                                val app         = filteredApps[index]
+                                val imageBitmap = imageBitmapCache[app.packageName]
 
-                            // Corners follow the row's position instantly. Animating them made the
-                            // new first row's top corners "kick out" whenever the list was switched.
-                            val isTop = index == 0
-                            val isBottom = index == filteredApps.size - 1
-                            val itemShape = RoundedCornerShape(
-                                topStart = if (isTop) 24.dp else 8.dp,
-                                topEnd = if (isTop) 24.dp else 8.dp,
-                                bottomStart = if (isBottom) 24.dp else 8.dp,
-                                bottomEnd = if (isBottom) 24.dp else 8.dp
-                            )
-
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .animateItem(fadeInSpec = null, fadeOutSpec = null)
-                                    .clip(itemShape)
-                                    .clickable {
-                                        val currentList = localAppLists.find { it.id == localActiveListId }
-                                        if (currentList != null) {
-                                            val isCurrentlySelected = currentList.packages.contains(app.packageName)
-                                            val newPackages = if (isCurrentlySelected) {
-                                                currentList.packages - app.packageName
-                                            } else {
-                                                currentList.packages + app.packageName
-                                            }
-                                            localAppLists = localAppLists.map {
-                                                if (it.id == localActiveListId) it.copy(packages = newPackages) else it
-                                            }
-                                        }
-
-                                        focusManager.clearFocus()
-                                        keyboardController?.hide()
-                                    }
-                                    .background(
-                                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                                        shape = itemShape
-                                    )
-                                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                val currentList = localAppLists.find { it.id == localActiveListId }
-                                val isChecked = currentList?.packages?.contains(app.packageName) ?: false
-
-                                Checkbox(
-                                    checked         = isChecked,
-                                    onCheckedChange = { checked ->
-                                        if (currentList != null) {
-                                            val newPackages = if (checked) {
-                                                currentList.packages + app.packageName
-                                            } else {
-                                                currentList.packages - app.packageName
-                                            }
-                                            localAppLists = localAppLists.map {
-                                                if (it.id == localActiveListId) it.copy(packages = newPackages) else it
-                                            }
-                                        }
-                                    }
+                                // Corners follow the row's position instantly. Animating them made the
+                                // new first row's top corners "kick out" whenever the list was switched.
+                                val isTop = index == 0
+                                val isBottom = index == filteredApps.size - 1
+                                val itemShape = RoundedCornerShape(
+                                    topStart = if (isTop) 24.dp else 8.dp,
+                                    topEnd = if (isTop) 24.dp else 8.dp,
+                                    bottomStart = if (isBottom) 24.dp else 8.dp,
+                                    bottomEnd = if (isBottom) 24.dp else 8.dp
                                 )
-                                if (imageBitmap != null) {
-                                    Image(
-                                        bitmap             = imageBitmap,
-                                        contentDescription = app.name,
-                                        modifier           = Modifier.size(36.dp).clip(CircleShape)
+
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .animateItem(fadeInSpec = null, fadeOutSpec = null)
+                                        .clip(itemShape)
+                                        .clickable {
+                                            val currentList = localAppLists.find { it.id == localActiveListId }
+                                            if (currentList != null) {
+                                                val isCurrentlySelected = currentList.packages.contains(app.packageName)
+                                                val newPackages = if (isCurrentlySelected) {
+                                                    currentList.packages - app.packageName
+                                                } else {
+                                                    currentList.packages + app.packageName
+                                                }
+                                                localAppLists = localAppLists.map {
+                                                    if (it.id == localActiveListId) it.copy(packages = newPackages) else it
+                                                }
+                                            }
+
+                                            focusManager.clearFocus()
+                                            keyboardController?.hide()
+                                        }
+                                        .background(
+                                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                            shape = itemShape
+                                        )
+                                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val currentList = localAppLists.find { it.id == localActiveListId }
+                                    val isChecked = currentList?.packages?.contains(app.packageName) ?: false
+
+                                    Checkbox(
+                                        checked         = isChecked,
+                                        onCheckedChange = { checked ->
+                                            if (currentList != null) {
+                                                val newPackages = if (checked) {
+                                                    currentList.packages + app.packageName
+                                                } else {
+                                                    currentList.packages - app.packageName
+                                                }
+                                                localAppLists = localAppLists.map {
+                                                    if (it.id == localActiveListId) it.copy(packages = newPackages) else it
+                                                }
+                                            }
+                                        }
                                     )
-                                } else {
-                                    Spacer(Modifier.size(36.dp))
+                                    if (imageBitmap != null) {
+                                        Image(
+                                            bitmap             = imageBitmap,
+                                            contentDescription = app.name,
+                                            modifier           = Modifier.size(36.dp).clip(CircleShape)
+                                        )
+                                    } else {
+                                        Spacer(Modifier.size(36.dp))
+                                    }
+                                    Spacer(Modifier.width(16.dp))
+                                    Text(text = app.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
-                                Spacer(Modifier.width(16.dp))
-                                Text(text = app.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
                 }
-            }
 
                 // Fade gradient at bottom
 //            Box(
@@ -983,8 +1103,114 @@ fun CustomAppPickerBottomSheet(
 //                    )
 //            )
             }
-        }
 
+            if (dragMenuState != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .zIndex(100f)
+                        .then(
+                            if (dragMenuState!!.isStatic) {
+                                Modifier.pointerInput(Unit) {
+                                    detectTapGestures(onTap = { dragMenuState = null })
+                                }
+                            } else Modifier
+                        )
+                ) {
+                    val bounds = dragMenuState!!.chipBounds
+                    val menuWidth = 160.dp
+                    val menuWidthPx = with(density) { menuWidth.toPx() }
+                    val screenW = containerSize.width.toFloat()
+
+                    var menuX = bounds.left
+                    if (menuX + menuWidthPx > screenW - 32f) {
+                        menuX = screenW - menuWidthPx - 32f
+                    }
+                    if (menuX < 32f) menuX = 32f
+
+                    val gap = with(density) { 8.dp.toPx() }
+                    val menuY = bounds.bottom + gap
+                    val menuOrigin = Offset(menuX, menuY)
+
+                    Surface(
+                        modifier = Modifier
+                            .offset { IntOffset(menuX.toInt(), menuY.toInt()) }
+                            .width(menuWidth)
+                            // Static menu: press anywhere on it, slide across the items (they highlight),
+                            // and release over one to select it. A plain tap on an item works the same way.
+                            .pointerInput(menuOrigin) {
+                                awaitEachGesture {
+                                    val down = awaitFirstDown()
+                                    down.consume()
+                                    var pos = menuOrigin + down.position
+                                    var lastHover = itemBounds.entries.firstOrNull { it.value.contains(pos) }?.key
+                                    dragMenuState = dragMenuState?.copy(fingerPos = pos)
+                                    while (true) {
+                                        val event = awaitPointerEvent()
+                                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                        pos = menuOrigin + change.position
+                                        // must be checked before consume(), and ignoring consumption
+                                        val released = change.changedToUpIgnoreConsumed()
+                                        change.consume()
+                                        val hovered = itemBounds.entries.firstOrNull { it.value.contains(pos) }?.key
+                                        if (released) {
+                                            val list = dragMenuState?.list
+                                            if (hovered != null && list != null) {
+                                                handleMenuAction(hovered, list)
+                                                dragMenuState = null
+                                            } else {
+                                                dragMenuState = dragMenuState?.copy(fingerPos = null)
+                                            }
+                                            break
+                                        }
+                                        if (hovered != lastHover) {
+                                            if (hovered != null) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            lastHover = hovered
+                                        }
+                                        dragMenuState = dragMenuState?.copy(fingerPos = pos)
+                                    }
+                                }
+                            },
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        shadowElevation = 8.dp
+                    ) {
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            MenuAction.entries.forEach { action ->
+                                if (action == MenuAction.DELETE && localAppLists.size <= 1) return@forEach
+
+                                val isHovered = dragMenuState!!.fingerPos != null && itemBounds[action]?.contains(dragMenuState!!.fingerPos!!) == true
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(24.dp))
+                                            .onGloballyPositioned { coords ->
+                                                if (containerCoords != null) {
+                                                    itemBounds[action] = containerCoords!!.localBoundingBoxOf(coords)
+                                                }
+                                            }
+                                            .background(if (isHovered) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f) else Color.Transparent)
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        val color = if (action == MenuAction.DELETE) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                                        Icon(action.icon, null, tint = color, modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(12.dp))
+                                        Text(action.label, color = color, style = MaterialTheme.typography.labelLarge)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
