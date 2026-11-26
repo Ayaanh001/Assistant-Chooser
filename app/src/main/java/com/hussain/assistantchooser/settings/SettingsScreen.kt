@@ -7,7 +7,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,32 +27,89 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Assistant
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Swipe
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.ToggleOn
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hussain.assistantchooser.ui.components.CollapsingTopAppBar
 import com.hussain.assistantchooser.BuildConfig
 import com.hussain.assistantchooser.R
 import com.hussain.assistantchooser.core.OverlaySource
+import com.hussain.assistantchooser.core.OverlayHeaderButtonAction
 import com.hussain.assistantchooser.core.ThemeMode
 import com.hussain.assistantchooser.core.ThemedIconMode
 import com.hussain.assistantchooser.ui.components.ChangelogBottomSheet
+import com.hussain.assistantchooser.ui.components.CollapsingTopAppBar
 import com.hussain.assistantchooser.ui.components.GroupSurface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -61,11 +130,15 @@ fun SettingsScreen(
     initialUseSystemFont: Boolean = false,
     initialSwipeToChangeList: Boolean,
     initialShowOverlaySwitch: Boolean = true,
+    initialHeaderButtonAction: OverlayHeaderButtonAction = OverlayHeaderButtonAction.APP,
+    initialHeaderButtonLongPressAction: OverlayHeaderButtonAction = OverlayHeaderButtonAction.SETTINGS,
     onToggleOpenApp: (Boolean) -> Unit,
     onToggleCloseAfter: (Boolean) -> Unit,
     onToggleShowPackageName: (Boolean) -> Unit,
     onThemedIconModeChange: (ThemedIconMode) -> Unit,
     onOverlaySourceChange: (OverlaySource) -> Unit,
+    onHeaderButtonActionChange: (OverlayHeaderButtonAction) -> Unit = {},
+    onHeaderButtonLongPressActionChange: (OverlayHeaderButtonAction) -> Unit = {},
     onToggleShowAppName: (Boolean) -> Unit,
     onToggleTileOpenOverlay: (Boolean) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
@@ -86,6 +159,8 @@ fun SettingsScreen(
     var tileOpenOverlay by remember { mutableStateOf(initialTileOpenOverlay) }
     var swipeToChangeList by remember { mutableStateOf(initialSwipeToChangeList) }
     var showOverlaySwitch by remember { mutableStateOf(initialShowOverlaySwitch) }
+    var headerButtonAction by remember { mutableStateOf(initialHeaderButtonAction) }
+    var headerButtonLongPressAction by remember { mutableStateOf(initialHeaderButtonLongPressAction) }
     var themeMode     by remember { mutableStateOf(initialThemeMode) }
     var useSystemFont by remember { mutableStateOf(initialUseSystemFont) }
 
@@ -99,10 +174,14 @@ fun SettingsScreen(
     LaunchedEffect(initialTileOpenOverlay) { tileOpenOverlay = initialTileOpenOverlay }
     LaunchedEffect(initialSwipeToChangeList) { swipeToChangeList = initialSwipeToChangeList }
     LaunchedEffect(initialShowOverlaySwitch) { showOverlaySwitch = initialShowOverlaySwitch }
+    LaunchedEffect(initialHeaderButtonAction) { headerButtonAction = initialHeaderButtonAction }
+    LaunchedEffect(initialHeaderButtonLongPressAction) { headerButtonLongPressAction = initialHeaderButtonLongPressAction }
     LaunchedEffect(initialThemeMode) { themeMode = initialThemeMode }
     LaunchedEffect(initialUseSystemFont) { useSystemFont = initialUseSystemFont }
 
     var showSrcSheet  by remember { mutableStateOf(false) }
+    var showThirdButtonSheet by remember { mutableStateOf(false) }
+    var showThirdButtonLongPressSheet by remember { mutableStateOf(false) }
     var showThemedSheet by remember { mutableStateOf(false) }
     var showChangelog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
@@ -228,6 +307,126 @@ fun SettingsScreen(
                             }
                         )
                     }
+                }
+            }
+        }
+    }
+
+    if (showThirdButtonSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showThirdButtonSheet = false },
+            sheetState       = sheetState,
+            containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor     = MaterialTheme.colorScheme.onSurface,
+            dragHandle       = { BottomSheetDefaults.DragHandle() },
+            contentWindowInsets = { WindowInsets.navigationBars }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 48.dp)
+            ) {
+                Text(
+                    text       = "Header Action Button",
+                    style      = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.onSurface,
+                    modifier   = Modifier.padding(horizontal = 12.dp)
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text     = "Choose what the top-right button in the overlay header opens when tapped.",
+                    style    = MaterialTheme.typography.bodyMedium,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+                Spacer(Modifier.height(24.dp))
+
+                GroupSurface(count = 3) { index, shape ->
+                    val option = OverlayHeaderButtonAction.entries[index]
+                    val (title, description) = when (option) {
+                        OverlayHeaderButtonAction.APP ->
+                            "App" to "Opens the main Assistant Chooser application."
+                        OverlayHeaderButtonAction.SETTINGS ->
+                            "Settings" to "Opens Assistant Chooser settings."
+                        OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS ->
+                            "Digital assistant settings" to "Opens Android device default digital assistant settings."
+                        OverlayHeaderButtonAction.NONE ->
+                            "None" to "Disable long press."
+                    }
+                    OverlaySourceOption(
+                        title       = title,
+                        description = description,
+                        selected    = headerButtonAction == option,
+                        shape       = shape,
+                        onClick     = {
+                            performHapticFeedback(context)
+                            headerButtonAction = option
+                            onHeaderButtonActionChange(option)
+                            showThirdButtonSheet = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    if (showThirdButtonLongPressSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showThirdButtonLongPressSheet = false },
+            sheetState       = sheetState,
+            containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor     = MaterialTheme.colorScheme.onSurface,
+            dragHandle       = { BottomSheetDefaults.DragHandle() },
+            contentWindowInsets = { WindowInsets.navigationBars }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 48.dp)
+            ) {
+                Text(
+                    text       = "Header Button Long Press",
+                    style      = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.onSurface,
+                    modifier   = Modifier.padding(horizontal = 12.dp)
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text     = "Choose what the top-right button in the overlay header opens when long-pressed.",
+                    style    = MaterialTheme.typography.bodyMedium,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+                Spacer(Modifier.height(24.dp))
+
+                GroupSurface(count = 4) { index, shape ->
+                    val option = OverlayHeaderButtonAction.entries[index]
+                    val (title, description) = when (option) {
+                        OverlayHeaderButtonAction.APP ->
+                            "App" to "Opens the main Assistant Chooser application."
+                        OverlayHeaderButtonAction.SETTINGS ->
+                            "Settings" to "Opens Assistant Chooser settings."
+                        OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS ->
+                            "Digital assistant settings" to "Opens Android device default digital assistant settings."
+                        OverlayHeaderButtonAction.NONE ->
+                            "None" to "Disable long press on the button."
+                    }
+                    OverlaySourceOption(
+                        title       = title,
+                        description = description,
+                        selected    = headerButtonLongPressAction == option,
+                        shape       = shape,
+                        onClick     = {
+                            performHapticFeedback(context)
+                            headerButtonLongPressAction = option
+                            onHeaderButtonLongPressActionChange(option)
+                            showThirdButtonLongPressSheet = false
+                        }
+                    )
                 }
             }
         }
@@ -412,7 +611,7 @@ fun SettingsScreen(
             // Overlay section
             item {
                 SectionLabel("Overlay")
-                GroupSurface(count = 5) { index, shape ->
+                GroupSurface(count = 7) { index, shape ->
                     when (index) {
                         0 -> OverlaySourceTile(
                             iconColor     = Color(0xFF673AB7),
@@ -422,7 +621,23 @@ fun SettingsScreen(
                                 showSrcSheet = true
                             }
                         )
-                        1 -> SettingTile(
+                        1 -> HeaderButtonActionTile(
+                            iconColor          = Color(0xFF3F51B5),
+                            headerButtonAction = headerButtonAction,
+                            shape              = shape,
+                            onClick            = {
+                                showThirdButtonSheet = true
+                            }
+                        )
+                        2 -> HeaderButtonLongPressTile(
+                            iconColor          = Color(0xFF009688),
+                            headerButtonAction = headerButtonLongPressAction,
+                            shape              = shape,
+                            onClick            = {
+                                showThirdButtonLongPressSheet = true
+                            }
+                        )
+                        3 -> SettingTile(
                             icon            = Icons.Default.SwapHoriz,
                             iconColor       = Color(0xFF9C27B0),
                             title           = "Show switch source button",
@@ -435,7 +650,7 @@ fun SettingsScreen(
                             },
                             shape = shape
                         )
-                        2 -> SettingTile(
+                        4 -> SettingTile(
                             icon            = Icons.Default.Visibility,
                             iconColor       = Color(0xFF00BCD4),
                             title           = "Show app names",
@@ -448,7 +663,7 @@ fun SettingsScreen(
                             },
                             shape = shape
                         )
-                        3 -> SettingTile(
+                        5 -> SettingTile(
                             icon            = Icons.Default.ToggleOn,
                             iconColor       = Color(0xFFFF9800),
                             title           = "Tile opens Overlay",
@@ -461,7 +676,7 @@ fun SettingsScreen(
                             },
                             shape = shape
                         )
-                        4 -> SettingTile(
+                        6 -> SettingTile(
                             icon            = Icons.Default.Swipe,
                             iconColor       = Color(0xFFE91E63),
                             title           = "Swipe to change list",
@@ -909,6 +1124,140 @@ private fun OverlaySourceTile(
                 ) {
                     Text(
                         text     = if (overlaySource == OverlaySource.ASSISTANT_APPS) "Assistant Apps" else "Custom Apps",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+            }
+            Icon(Icons.Default.ChevronRight, null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun HeaderButtonActionTile(
+    iconColor: Color = MaterialTheme.colorScheme.primary,
+    headerButtonAction: OverlayHeaderButtonAction,
+    shape: RoundedCornerShape,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier       = Modifier.fillMaxWidth(),
+        shape          = shape,
+        color          = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 3.dp
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier          = Modifier.fillMaxWidth().clickable { onClick() }.padding(16.dp)
+        ) {
+            Surface(
+                shape    = RoundedCornerShape(12.dp),
+                color    = iconColor.copy(alpha = 0.15f),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = when (headerButtonAction) {
+                        OverlayHeaderButtonAction.APP -> Icons.AutoMirrored.Filled.OpenInNew
+                        OverlayHeaderButtonAction.SETTINGS -> Icons.Default.Settings
+                        OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS -> Icons.Default.Assistant
+                        OverlayHeaderButtonAction.NONE -> Icons.AutoMirrored.Filled.OpenInNew
+                    },
+                    contentDescription = null,
+                    tint               = iconColor,
+                    modifier           = Modifier.padding(8.dp)
+                )
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Header action button", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Action when top-right button in overlay is tapped",
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.surfaceContainerLowest
+                ) {
+                    Text(
+                        text = when (headerButtonAction) {
+                            OverlayHeaderButtonAction.APP -> "App"
+                            OverlayHeaderButtonAction.SETTINGS -> "Settings"
+                            OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS -> "Digital assistant settings"
+                            OverlayHeaderButtonAction.NONE -> "None"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+            }
+            Icon(Icons.Default.ChevronRight, null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun HeaderButtonLongPressTile(
+    iconColor: Color = MaterialTheme.colorScheme.primary,
+    headerButtonAction: OverlayHeaderButtonAction,
+    shape: RoundedCornerShape,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier       = Modifier.fillMaxWidth(),
+        shape          = shape,
+        color          = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 3.dp
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier          = Modifier.fillMaxWidth().clickable { onClick() }.padding(16.dp)
+        ) {
+            Surface(
+                shape    = RoundedCornerShape(12.dp),
+                color    = iconColor.copy(alpha = 0.15f),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = when (headerButtonAction) {
+                        OverlayHeaderButtonAction.APP -> Icons.AutoMirrored.Filled.OpenInNew
+                        OverlayHeaderButtonAction.SETTINGS -> Icons.Default.Settings
+                        OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS -> Icons.Default.Assistant
+                        OverlayHeaderButtonAction.NONE -> Icons.AutoMirrored.Filled.OpenInNew
+                    },
+                    contentDescription = null,
+                    tint               = iconColor,
+                    modifier           = Modifier.padding(8.dp)
+                )
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Header button long press", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Action when top-right button in overlay is long-pressed",
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.surfaceContainerLowest
+                ) {
+                    Text(
+                        text = when (headerButtonAction) {
+                            OverlayHeaderButtonAction.APP -> "App"
+                            OverlayHeaderButtonAction.SETTINGS -> "Settings"
+                            OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS -> "Digital assistant settings"
+                            OverlayHeaderButtonAction.NONE -> "None"
+                        },
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,

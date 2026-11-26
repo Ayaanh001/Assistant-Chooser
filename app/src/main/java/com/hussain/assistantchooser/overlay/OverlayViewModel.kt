@@ -5,9 +5,32 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.hussain.assistantchooser.core.*
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import com.hussain.assistantchooser.core.AppCache
+import com.hussain.assistantchooser.core.AssistantApp
+import com.hussain.assistantchooser.core.CustomAppListManager
+import com.hussain.assistantchooser.core.KEY_CLOSE_AFTER_LAUNCH
+import com.hussain.assistantchooser.core.KEY_OPEN_APP
+import com.hussain.assistantchooser.core.KEY_OVERLAY_HEADER_BUTTON
+import com.hussain.assistantchooser.core.KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS
+import com.hussain.assistantchooser.core.KEY_OVERLAY_SOURCE
+import com.hussain.assistantchooser.core.KEY_SHOW_APP_NAME
+import com.hussain.assistantchooser.core.KEY_SHOW_OVERLAY_SWITCH
+import com.hussain.assistantchooser.core.KEY_SWIPE_TO_CHANGE_LIST
+import com.hussain.assistantchooser.core.KEY_THEMED_ICONS
+import com.hussain.assistantchooser.core.KEY_THEME_MODE
+import com.hussain.assistantchooser.core.KEY_USE_SYSTEM_FONT
+import com.hussain.assistantchooser.core.OverlayHeaderButtonAction
+import com.hussain.assistantchooser.core.OverlaySource
+import com.hussain.assistantchooser.core.PREFS_NAME
+import com.hussain.assistantchooser.core.ThemeMode
+import com.hussain.assistantchooser.core.ThemedIconMode
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 class OverlayViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -59,6 +82,19 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
     private val _showOverlaySwitch = MutableStateFlow(prefs.getBoolean(KEY_SHOW_OVERLAY_SWITCH, true))
     val showOverlaySwitch: StateFlow<Boolean> = _showOverlaySwitch.asStateFlow()
 
+    private val _headerButtonAction = MutableStateFlow(
+        OverlayHeaderButtonAction.fromString(prefs.getString(KEY_OVERLAY_HEADER_BUTTON, null))
+    )
+    val headerButtonAction: StateFlow<OverlayHeaderButtonAction> = _headerButtonAction.asStateFlow()
+
+    private val _headerButtonLongPressAction = MutableStateFlow(
+        OverlayHeaderButtonAction.fromString(
+            prefs.getString(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS, null),
+            default = OverlayHeaderButtonAction.SETTINGS
+        )
+    )
+    val headerButtonLongPressAction: StateFlow<OverlayHeaderButtonAction> = _headerButtonLongPressAction.asStateFlow()
+
     // Fully reactive list of apps based on source and saved selection
     val apps: StateFlow<List<AssistantApp>> = combine(
         AppCache.state,
@@ -108,6 +144,15 @@ class OverlayViewModel(application: Application) : AndroidViewModel(application)
             }
             KEY_SHOW_OVERLAY_SWITCH -> {
                 _showOverlaySwitch.value = sharedPreferences.getBoolean(KEY_SHOW_OVERLAY_SWITCH, true)
+            }
+            KEY_OVERLAY_HEADER_BUTTON -> {
+                _headerButtonAction.value = OverlayHeaderButtonAction.fromString(sharedPreferences.getString(KEY_OVERLAY_HEADER_BUTTON, null))
+            }
+            KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS -> {
+                _headerButtonLongPressAction.value = OverlayHeaderButtonAction.fromString(
+                    sharedPreferences.getString(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS, null),
+                    default = OverlayHeaderButtonAction.SETTINGS
+                )
             }
         }
     }

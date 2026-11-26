@@ -12,9 +12,29 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.hussain.assistantchooser.core.*
+import com.hussain.assistantchooser.core.KEY_CLOSE_AFTER_LAUNCH
+import com.hussain.assistantchooser.core.KEY_OPEN_APP
+import com.hussain.assistantchooser.core.KEY_OVERLAY_SOURCE
+import com.hussain.assistantchooser.core.KEY_OVERLAY_HEADER_BUTTON
+import com.hussain.assistantchooser.core.KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS
+import com.hussain.assistantchooser.core.KEY_SHOW_APP_NAME
+import com.hussain.assistantchooser.core.KEY_SHOW_OVERLAY_SWITCH
+import com.hussain.assistantchooser.core.KEY_SHOW_PACKAGE_NAME
+import com.hussain.assistantchooser.core.KEY_SWIPE_TO_CHANGE_LIST
+import com.hussain.assistantchooser.core.KEY_THEMED_ICONS
+import com.hussain.assistantchooser.core.KEY_THEME_MODE
+import com.hussain.assistantchooser.core.KEY_TILE_OPEN_OVERLAY
+import com.hussain.assistantchooser.core.KEY_USE_SYSTEM_FONT
+import com.hussain.assistantchooser.core.OverlayHeaderButtonAction
+import com.hussain.assistantchooser.core.OverlaySource
+import com.hussain.assistantchooser.core.PREFS_NAME
+import com.hussain.assistantchooser.core.ThemeMode
+import com.hussain.assistantchooser.core.ThemedIconMode
 import com.hussain.assistantchooser.ui.theme.AssistantChooserTheme
 import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
@@ -82,34 +102,55 @@ class SettingsActivity : ComponentActivity() {
                     }
                     var swipeToChangeList by remember { mutableStateOf(prefs.getBoolean(KEY_SWIPE_TO_CHANGE_LIST, true)) }
                     var showOverlaySwitch by remember { mutableStateOf(prefs.getBoolean(KEY_SHOW_OVERLAY_SWITCH, true)) }
+                    var headerButtonAction by remember {
+                        mutableStateOf(OverlayHeaderButtonAction.fromString(prefs.getString(KEY_OVERLAY_HEADER_BUTTON, null)))
+                    }
+                    var headerButtonLongPressAction by remember {
+                        mutableStateOf(
+                            OverlayHeaderButtonAction.fromString(
+                                prefs.getString(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS, null),
+                                default = OverlayHeaderButtonAction.SETTINGS
+                            )
+                        )
+                    }
 
                     SettingsScreen(
-                        initialOpenApp              = openApp,
-                        initialCloseAfter           = closeAfter,
-                        initialShowPackage          = showPkg,
-                        initialShowAppName          = showAppName,
-                        initialThemedIconMode       = themedIconMode,
-                        initialOverlaySrc           = overlaySrc,
-                        initialTileOpenOverlay      = tileOpenOverlay,
-                        initialThemeMode            = themeMode,
-                        initialUseSystemFont        = useSystemFont,
-                        initialSwipeToChangeList    = swipeToChangeList,
-                        initialShowOverlaySwitch    = showOverlaySwitch,
-                        onToggleOpenApp             = {
+                        initialOpenApp                      = openApp,
+                        initialCloseAfter                   = closeAfter,
+                        initialShowPackage                  = showPkg,
+                        initialShowAppName                  = showAppName,
+                        initialThemedIconMode               = themedIconMode,
+                        initialOverlaySrc                   = overlaySrc,
+                        initialTileOpenOverlay              = tileOpenOverlay,
+                        initialThemeMode                    = themeMode,
+                        initialUseSystemFont                = useSystemFont,
+                        initialSwipeToChangeList            = swipeToChangeList,
+                        initialShowOverlaySwitch            = showOverlaySwitch,
+                        initialHeaderButtonAction           = headerButtonAction,
+                        initialHeaderButtonLongPressAction  = headerButtonLongPressAction,
+                        onToggleOpenApp                     = {
                             openApp = it
                             prefs.edit().putBoolean(KEY_OPEN_APP, it).apply()
                         },
-                        onToggleCloseAfter          = {
+                        onToggleCloseAfter                  = {
                             closeAfter = it
                             prefs.edit().putBoolean(KEY_CLOSE_AFTER_LAUNCH, it).apply()
                         },
-                        onToggleShowPackageName     = {
+                        onToggleShowPackageName             = {
                             showPkg = it
                             prefs.edit().putBoolean(KEY_SHOW_PACKAGE_NAME, it).apply()
                         },
-                        onOverlaySourceChange       = {
+                        onOverlaySourceChange               = {
                             overlaySrc = it
                             prefs.edit().putString(KEY_OVERLAY_SOURCE, it.name).apply()
+                        },
+                        onHeaderButtonActionChange          = {
+                            headerButtonAction = it
+                            prefs.edit().putString(KEY_OVERLAY_HEADER_BUTTON, it.name).apply()
+                        },
+                        onHeaderButtonLongPressActionChange = {
+                            headerButtonLongPressAction = it
+                            prefs.edit().putString(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS, it.name).apply()
                         },
                         onToggleShowAppName         = {
                             showAppName = it
@@ -160,6 +201,11 @@ class SettingsActivity : ComponentActivity() {
                                 tileOpenOverlay = prefs.getBoolean(KEY_TILE_OPEN_OVERLAY, tileOpenOverlay)
                                 swipeToChangeList = prefs.getBoolean(KEY_SWIPE_TO_CHANGE_LIST, swipeToChangeList)
                                 showOverlaySwitch = prefs.getBoolean(KEY_SHOW_OVERLAY_SWITCH, showOverlaySwitch)
+                                headerButtonAction = OverlayHeaderButtonAction.fromString(prefs.getString(KEY_OVERLAY_HEADER_BUTTON, null))
+                                headerButtonLongPressAction = OverlayHeaderButtonAction.fromString(
+                                    prefs.getString(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS, null),
+                                    default = OverlayHeaderButtonAction.SETTINGS
+                                )
                                 overlaySrc = OverlaySource.fromString(prefs.getString(KEY_OVERLAY_SOURCE, null))
                                 themeMode = ThemeMode.fromString(prefs.getString(KEY_THEME_MODE, null))
                                 useSystemFont = prefs.getBoolean(KEY_USE_SYSTEM_FONT, useSystemFont)

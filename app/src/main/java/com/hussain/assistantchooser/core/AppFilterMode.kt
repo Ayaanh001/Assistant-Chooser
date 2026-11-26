@@ -38,3 +38,18 @@ enum class ThemedIconMode {
             entries.firstOrNull { it.name == value } ?: OFF
     }
 }
+
+enum class OverlayHeaderButtonAction {
+    APP,
+    SETTINGS,
+    DIGITAL_ASSISTANT_SETTINGS,
+    NONE;
+
+    companion object {
+        fun fromString(value: String?, default: OverlayHeaderButtonAction = APP): OverlayHeaderButtonAction =
+            entries.firstOrNull { it.name == value } ?: default
+    }
+}
+
+typealias OverlayThirdButtonAction = OverlayHeaderButtonAction
+

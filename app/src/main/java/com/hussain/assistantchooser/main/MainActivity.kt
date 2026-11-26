@@ -21,14 +21,23 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussain.assistantchooser.R
-import com.hussain.assistantchooser.core.*
+import com.hussain.assistantchooser.core.KEY_FIRST_LAUNCH
+import com.hussain.assistantchooser.core.PREFS_NAME
+import com.hussain.assistantchooser.core.ThemeMode
+import com.hussain.assistantchooser.core.ThemedIconMode
 import com.hussain.assistantchooser.data.launchAssistantForPackage
 import com.hussain.assistantchooser.services.QuickLaunchTileService
 import com.hussain.assistantchooser.settings.SettingsActivity
@@ -118,8 +127,9 @@ class MainActivity : ComponentActivity() {
                     },
                     onSettingsClick = {
                         startActivity(
-                            Intent(context, SettingsActivity::class.java)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            Intent(this@MainActivity, SettingsActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                            }
                         )
                     },
                     onAddTileClicked = { requestAddQuickSettingsTile() },

@@ -1,7 +1,33 @@
 package com.hussain.assistantchooser.settings
 
 import android.content.Context
-import com.hussain.assistantchooser.core.*
+import com.hussain.assistantchooser.core.AppFilterMode
+import com.hussain.assistantchooser.core.KEY_ACTIVE_CUSTOM_LIST_ID
+import com.hussain.assistantchooser.core.KEY_APP_FILTER_MODE
+import com.hussain.assistantchooser.core.KEY_CLOSE_AFTER_LAUNCH
+import com.hussain.assistantchooser.core.KEY_CUSTOM_APPS
+import com.hussain.assistantchooser.core.KEY_CUSTOM_APP_LISTS
+import com.hussain.assistantchooser.core.KEY_FIRST_LAUNCH
+import com.hussain.assistantchooser.core.KEY_OPEN_APP
+import com.hussain.assistantchooser.core.KEY_OVERLAY_SOURCE
+import com.hussain.assistantchooser.core.KEY_OVERLAY_HEADER_BUTTON
+import com.hussain.assistantchooser.core.KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS
+import com.hussain.assistantchooser.core.KEY_OVERLAY_THIRD_BUTTON
+import com.hussain.assistantchooser.core.KEY_OVERLAY_THIRD_BUTTON_LONG_PRESS
+import com.hussain.assistantchooser.core.KEY_SHOW_APP_NAME
+import com.hussain.assistantchooser.core.KEY_SHOW_OVERLAY_SWITCH
+import com.hussain.assistantchooser.core.KEY_SHOW_PACKAGE_NAME
+import com.hussain.assistantchooser.core.KEY_SWIPE_TO_CHANGE_LIST
+import com.hussain.assistantchooser.core.KEY_THEMED_ICONS
+import com.hussain.assistantchooser.core.KEY_THEME_MODE
+import com.hussain.assistantchooser.core.KEY_TILE_OPEN_OVERLAY
+import com.hussain.assistantchooser.core.KEY_USE_SYSTEM_FONT
+import com.hussain.assistantchooser.core.OverlayHeaderButtonAction
+import com.hussain.assistantchooser.core.OverlaySource
+import com.hussain.assistantchooser.core.OverlayThirdButtonAction
+import com.hussain.assistantchooser.core.PREFS_NAME
+import com.hussain.assistantchooser.core.ThemeMode
+import com.hussain.assistantchooser.core.ThemedIconMode
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -49,6 +75,8 @@ object BackupUtils {
                 put(KEY_TILE_OPEN_OVERLAY, prefs.getBoolean(KEY_TILE_OPEN_OVERLAY, true))
                 put(KEY_SWIPE_TO_CHANGE_LIST, prefs.getBoolean(KEY_SWIPE_TO_CHANGE_LIST, true))
                 put(KEY_SHOW_OVERLAY_SWITCH, prefs.getBoolean(KEY_SHOW_OVERLAY_SWITCH, true))
+                put(KEY_OVERLAY_HEADER_BUTTON, prefs.getString(KEY_OVERLAY_HEADER_BUTTON, OverlayHeaderButtonAction.APP.name))
+                put(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS, prefs.getString(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS, OverlayHeaderButtonAction.SETTINGS.name))
                 put(KEY_THEME_MODE, prefs.getString(KEY_THEME_MODE, ThemeMode.AUTO.name))
                 put(KEY_USE_SYSTEM_FONT, prefs.getBoolean(KEY_USE_SYSTEM_FONT, false))
             }
@@ -113,6 +141,10 @@ object BackupUtils {
             if (appSettings.has(KEY_TILE_OPEN_OVERLAY)) edit.putBoolean(KEY_TILE_OPEN_OVERLAY, appSettings.getBoolean(KEY_TILE_OPEN_OVERLAY))
             if (appSettings.has(KEY_SWIPE_TO_CHANGE_LIST)) edit.putBoolean(KEY_SWIPE_TO_CHANGE_LIST, appSettings.getBoolean(KEY_SWIPE_TO_CHANGE_LIST))
             if (appSettings.has(KEY_SHOW_OVERLAY_SWITCH)) edit.putBoolean(KEY_SHOW_OVERLAY_SWITCH, appSettings.getBoolean(KEY_SHOW_OVERLAY_SWITCH))
+            if (appSettings.has(KEY_OVERLAY_HEADER_BUTTON)) edit.putString(KEY_OVERLAY_HEADER_BUTTON, appSettings.getString(KEY_OVERLAY_HEADER_BUTTON))
+            else if (appSettings.has(KEY_OVERLAY_THIRD_BUTTON)) edit.putString(KEY_OVERLAY_HEADER_BUTTON, appSettings.getString(KEY_OVERLAY_THIRD_BUTTON))
+            if (appSettings.has(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS)) edit.putString(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS, appSettings.getString(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS))
+            else if (appSettings.has(KEY_OVERLAY_THIRD_BUTTON_LONG_PRESS)) edit.putString(KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS, appSettings.getString(KEY_OVERLAY_THIRD_BUTTON_LONG_PRESS))
             if (appSettings.has(KEY_USE_SYSTEM_FONT)) edit.putBoolean(KEY_USE_SYSTEM_FONT, appSettings.getBoolean(KEY_USE_SYSTEM_FONT))
 
             if (appSettings.has(KEY_THEME_MODE)) edit.putString(KEY_THEME_MODE, appSettings.getString(KEY_THEME_MODE))

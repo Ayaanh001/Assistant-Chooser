@@ -5,15 +5,22 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hussain.assistantchooser.core.*
+import com.hussain.assistantchooser.core.KEY_CLOSE_AFTER_LAUNCH
+import com.hussain.assistantchooser.core.KEY_OPEN_APP
+import com.hussain.assistantchooser.core.KEY_SHOW_APP_NAME
+import com.hussain.assistantchooser.core.OverlayHeaderButtonAction
+import com.hussain.assistantchooser.core.PREFS_NAME
+import com.hussain.assistantchooser.core.ThemeMode
+import com.hussain.assistantchooser.core.ThemedIconMode
 import com.hussain.assistantchooser.data.launchAssistantForPackage
-import androidx.activity.enableEdgeToEdge
 import com.hussain.assistantchooser.main.MainActivity
+import com.hussain.assistantchooser.settings.SettingsActivity
 import com.hussain.assistantchooser.ui.theme.AssistantChooserTheme
 
 class AssistantOverlayActivity : ComponentActivity() {
@@ -51,22 +58,26 @@ class AssistantOverlayActivity : ComponentActivity() {
                 val activeListId by viewModel.customAppListManager.activeListId.collectAsStateWithLifecycle()
                 val swipeToChangeList by viewModel.swipeToChangeList.collectAsStateWithLifecycle()
                 val showOverlaySwitch by viewModel.showOverlaySwitch.collectAsStateWithLifecycle()
+                val headerButtonAction by viewModel.headerButtonAction.collectAsStateWithLifecycle()
+                val headerButtonLongPressAction by viewModel.headerButtonLongPressAction.collectAsStateWithLifecycle()
 
                 AssistantOverlayScreen(
-                    apps                = apps,
-                    isLoading           = isLoading,
-                    overlaySource       = overlaySource,
-                    allApps             = allApps,
-                    appLists            = appLists,
-                    activeListId        = activeListId,
-                    swipeToChangeList   = swipeToChangeList,
-                    showOverlaySwitch   = showOverlaySwitch,
-                    onOverlaySourceChange = { source -> viewModel.setOverlaySource(source) },
-                    onSaveAllLists      = { lists, activeId -> viewModel.customAppListManager.replaceAll(lists, activeId) },
-                    onSetActiveListId   = { activeId -> viewModel.customAppListManager.setActiveListId(activeId) },
-                    showAppName         = showAppName,
-                    themedIcons         = themedIconMode == ThemedIconMode.OVERLAY_ONLY || themedIconMode == ThemedIconMode.BOTH,
-                    onAppClick          = { pkg ->
+                    apps                        = apps,
+                    isLoading                   = isLoading,
+                    overlaySource               = overlaySource,
+                    allApps                     = allApps,
+                    appLists                    = appLists,
+                    activeListId                = activeListId,
+                    swipeToChangeList           = swipeToChangeList,
+                    showOverlaySwitch           = showOverlaySwitch,
+                    headerButtonAction          = headerButtonAction,
+                    headerButtonLongPressAction = headerButtonLongPressAction,
+                    onOverlaySourceChange       = { source -> viewModel.setOverlaySource(source) },
+                    onSaveAllLists              = { lists, activeId -> viewModel.customAppListManager.replaceAll(lists, activeId) },
+                    onSetActiveListId           = { activeId -> viewModel.customAppListManager.setActiveListId(activeId) },
+                    showAppName                 = showAppName,
+                    themedIcons                 = themedIconMode == ThemedIconMode.OVERLAY_ONLY || themedIconMode == ThemedIconMode.BOTH,
+                    onAppClick                  = { pkg ->
                         if (openApp) {
                             runCatching {
                                 val launch = packageManager.getLaunchIntentForPackage(pkg)
@@ -80,10 +91,21 @@ class AssistantOverlayActivity : ComponentActivity() {
                         }
                         if (closeAfter) finish()
                     },
-                    onDismiss           = { finish() },
-                    onOpenApp           = { openFullApp() },
+                    onDismiss                   = { finish() },
+                    onOpenApp                   = { openFullApp() },
+                    onHeaderButtonClick         = { executeHeaderButtonAction(headerButtonAction) },
+                    onHeaderButtonLongClick     = { executeHeaderButtonAction(headerButtonLongPressAction) }
                 )
             }
+        }
+    }
+
+    private fun executeHeaderButtonAction(action: OverlayHeaderButtonAction) {
+        when (action) {
+            OverlayHeaderButtonAction.APP -> openFullApp()
+            OverlayHeaderButtonAction.SETTINGS -> openSettings()
+            OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS -> openDigitalAssistantSettings()
+            OverlayHeaderButtonAction.NONE -> {}
         }
     }
 
@@ -91,11 +113,32 @@ class AssistantOverlayActivity : ComponentActivity() {
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             )
         }
         startActivity(intent)
+        finish()
+    }
+
+    private fun openSettings() {
+        val intent = Intent(this, SettingsActivity::class.java).apply {
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            )
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun openDigitalAssistantSettings() {
+        runCatching {
+            startActivity(
+                Intent(android.provider.Settings.ACTION_VOICE_INPUT_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            )
+        }
         finish()
     }
 }

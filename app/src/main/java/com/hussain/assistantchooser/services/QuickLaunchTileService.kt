@@ -21,7 +21,7 @@ class QuickLaunchTileService : TileService() {
 
         val targetClass = if (openOverlay) AssistantOverlayActivity::class.java else MainActivity::class.java
         val intent = Intent(this, targetClass).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
         }
 
         try {

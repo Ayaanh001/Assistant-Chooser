@@ -17,3 +17,7 @@ const val KEY_THEMED_ICONS         = "themed_icons"
 const val KEY_USE_SYSTEM_FONT      = "use_system_font"
 const val KEY_SWIPE_TO_CHANGE_LIST = "swipe_to_change_list"
 const val KEY_SHOW_OVERLAY_SWITCH  = "show_overlay_switch"
+const val KEY_OVERLAY_HEADER_BUTTON            = "overlay_header_button"
+const val KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS = "overlay_header_button_long_press"
+const val KEY_OVERLAY_THIRD_BUTTON            = KEY_OVERLAY_HEADER_BUTTON
+const val KEY_OVERLAY_THIRD_BUTTON_LONG_PRESS = KEY_OVERLAY_HEADER_BUTTON_LONG_PRESS
