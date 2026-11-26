@@ -1,11 +1,16 @@
 package com.hussain.assistantchooser.settings
 
-import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,39 +30,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Assistant
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.BrightnessAuto
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.Swipe
-import androidx.compose.material.icons.filled.TextFields
-import androidx.compose.material.icons.filled.ToggleOn
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -66,134 +42,84 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.hussain.assistantchooser.BuildConfig
-import com.hussain.assistantchooser.R
-import com.hussain.assistantchooser.core.OverlaySource
+import com.hussain.assistantchooser.core.AssistantApp
+import com.hussain.assistantchooser.core.CustomAppList
 import com.hussain.assistantchooser.core.OverlayHeaderButtonAction
+import com.hussain.assistantchooser.core.OverlaySource
 import com.hussain.assistantchooser.core.ThemeMode
 import com.hussain.assistantchooser.core.ThemedIconMode
 import com.hussain.assistantchooser.ui.components.ChangelogBottomSheet
 import com.hussain.assistantchooser.ui.components.CollapsingTopAppBar
 import com.hussain.assistantchooser.ui.components.GroupSurface
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    initialOpenApp: Boolean,
-    initialCloseAfter: Boolean,
-    initialShowPackage: Boolean,
-    initialThemedIconMode: ThemedIconMode,
-    initialOverlaySrc: OverlaySource,
-    initialShowAppName: Boolean,
-    initialTileOpenOverlay: Boolean,
-    initialThemeMode: ThemeMode,
-    initialUseSystemFont: Boolean = false,
-    initialSwipeToChangeList: Boolean,
-    initialShowOverlaySwitch: Boolean = true,
-    initialHeaderButtonAction: OverlayHeaderButtonAction = OverlayHeaderButtonAction.APP,
-    initialHeaderButtonLongPressAction: OverlayHeaderButtonAction = OverlayHeaderButtonAction.SETTINGS,
+    uiState: SettingsUiState,
+    overlayApps: List<AssistantApp> = emptyList(),
+    allApps: List<AssistantApp> = emptyList(),
+    appLists: List<CustomAppList> = emptyList(),
+    activeListId: String? = null,
+    isLoadingApps: Boolean = false,
+    onSaveAllCustomLists: (List<CustomAppList>, String?) -> Unit = { _, _ -> },
+    onSetActiveCustomListId: (String) -> Unit = {},
+    onThemeModeChange: (ThemeMode) -> Unit,
+    onToggleUseSystemFont: (Boolean) -> Unit,
+    onToggleShowPackageName: (Boolean) -> Unit,
     onToggleOpenApp: (Boolean) -> Unit,
     onToggleCloseAfter: (Boolean) -> Unit,
-    onToggleShowPackageName: (Boolean) -> Unit,
-    onThemedIconModeChange: (ThemedIconMode) -> Unit,
     onOverlaySourceChange: (OverlaySource) -> Unit,
-    onHeaderButtonActionChange: (OverlayHeaderButtonAction) -> Unit = {},
-    onHeaderButtonLongPressActionChange: (OverlayHeaderButtonAction) -> Unit = {},
+    onHeaderButtonActionChange: (OverlayHeaderButtonAction) -> Unit,
+    onHeaderButtonLongPressActionChange: (OverlayHeaderButtonAction) -> Unit,
+    onToggleShowOverlaySwitch: (Boolean) -> Unit,
     onToggleShowAppName: (Boolean) -> Unit,
     onToggleTileOpenOverlay: (Boolean) -> Unit,
-    onThemeModeChange: (ThemeMode) -> Unit,
-    onToggleUseSystemFont: (Boolean) -> Unit = {},
     onToggleSwipeToChangeList: (Boolean) -> Unit,
-    onToggleShowOverlaySwitch: (Boolean) -> Unit = {},
+    onThemedIconModeChange: (ThemedIconMode) -> Unit,
+    onCheckUpdate: () -> Unit,
     onExport: (exportCustomApps: Boolean, exportSettings: Boolean) -> Unit,
     onImport: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    val context       = LocalContext.current
-    var openApp       by remember { mutableStateOf(initialOpenApp) }
-    var closeAfter    by remember { mutableStateOf(initialCloseAfter) }
-    var showPkg       by remember { mutableStateOf(initialShowPackage) }
-    var themedIconMode by remember { mutableStateOf(initialThemedIconMode) }
-    var overlaySource by remember { mutableStateOf(initialOverlaySrc) }
-    var showAppName   by remember { mutableStateOf(initialShowAppName) }
-    var tileOpenOverlay by remember { mutableStateOf(initialTileOpenOverlay) }
-    var swipeToChangeList by remember { mutableStateOf(initialSwipeToChangeList) }
-    var showOverlaySwitch by remember { mutableStateOf(initialShowOverlaySwitch) }
-    var headerButtonAction by remember { mutableStateOf(initialHeaderButtonAction) }
-    var headerButtonLongPressAction by remember { mutableStateOf(initialHeaderButtonLongPressAction) }
-    var themeMode     by remember { mutableStateOf(initialThemeMode) }
-    var useSystemFont by remember { mutableStateOf(initialUseSystemFont) }
+    val context = LocalContext.current
+    var currentCategory by rememberSaveable { mutableStateOf<String?>(null) }
 
-    // Sync state when props change (e.g. after import)
-    LaunchedEffect(initialOpenApp) { openApp = initialOpenApp }
-    LaunchedEffect(initialCloseAfter) { closeAfter = initialCloseAfter }
-    LaunchedEffect(initialShowPackage) { showPkg = initialShowPackage }
-    LaunchedEffect(initialThemedIconMode) { themedIconMode = initialThemedIconMode }
-    LaunchedEffect(initialOverlaySrc) { overlaySource = initialOverlaySrc }
-    LaunchedEffect(initialShowAppName) { showAppName = initialShowAppName }
-    LaunchedEffect(initialTileOpenOverlay) { tileOpenOverlay = initialTileOpenOverlay }
-    LaunchedEffect(initialSwipeToChangeList) { swipeToChangeList = initialSwipeToChangeList }
-    LaunchedEffect(initialShowOverlaySwitch) { showOverlaySwitch = initialShowOverlaySwitch }
-    LaunchedEffect(initialHeaderButtonAction) { headerButtonAction = initialHeaderButtonAction }
-    LaunchedEffect(initialHeaderButtonLongPressAction) { headerButtonLongPressAction = initialHeaderButtonLongPressAction }
-    LaunchedEffect(initialThemeMode) { themeMode = initialThemeMode }
-    LaunchedEffect(initialUseSystemFont) { useSystemFont = initialUseSystemFont }
-
-    var showSrcSheet  by remember { mutableStateOf(false) }
+    var showSrcSheet by remember { mutableStateOf(false) }
     var showThirdButtonSheet by remember { mutableStateOf(false) }
     var showThirdButtonLongPressSheet by remember { mutableStateOf(false) }
     var showThemedSheet by remember { mutableStateOf(false) }
     var showChangelog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
 
-    var exportCustom   by remember { mutableStateOf(true) }
+    var exportCustom by remember { mutableStateOf(true) }
     var exportSettings by remember { mutableStateOf(true) }
 
     val currentVersion = BuildConfig.VERSION_NAME
-    var loading        by remember { mutableStateOf(false) }
-    val snackbarState  = remember { SnackbarHostState() }
-    val scope          = rememberCoroutineScope()
-
+    val snackbarState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val importLauncher = rememberLauncherForActivityResult(
@@ -211,11 +137,16 @@ fun SettingsScreen(
         }
     }
 
+    // Handle back button press when inside a sub-category
+    BackHandler(enabled = currentCategory != null) {
+        currentCategory = null
+    }
+
     if (showExportDialog) {
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
-            title   = { Text("Export Settings") },
-            text    = {
+            title = { Text("Export Settings") },
+            text = {
                 Column {
                     Text("Select what to export:", style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(16.dp))
@@ -252,10 +183,10 @@ fun SettingsScreen(
     if (showSrcSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSrcSheet = false },
-            sheetState       = sheetState,
-            containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
-            contentColor     = MaterialTheme.colorScheme.onSurface,
-            dragHandle       = { BottomSheetDefaults.DragHandle() },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            dragHandle = { BottomSheetDefaults.DragHandle() },
             contentWindowInsets = { WindowInsets.navigationBars }
         ) {
             Column(
@@ -265,17 +196,17 @@ fun SettingsScreen(
                     .padding(bottom = 48.dp)
             ) {
                 Text(
-                    text       = "Overlay App Source",
-                    style      = MaterialTheme.typography.headlineMedium,
+                    text = "Overlay App Source",
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color      = MaterialTheme.colorScheme.onSurface,
-                    modifier   = Modifier.padding(horizontal = 12.dp)
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text     = "Choose which app list is shown when the assistant button is pressed.",
-                    style    = MaterialTheme.typography.bodyMedium,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = "Choose which app list is shown when the assistant button is pressed.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
                 Spacer(Modifier.height(24.dp))
@@ -283,25 +214,21 @@ fun SettingsScreen(
                 GroupSurface(count = 2) { index, shape ->
                     when (index) {
                         0 -> OverlaySourceOption(
-                            title       = "Assistant Apps",
+                            title = "Assistant Apps",
                             description = "Shows apps that support voice assistant — E.g. Google, ChatGPT, Copilot, Perplexity.",
-                            selected    = overlaySource == OverlaySource.ASSISTANT_APPS,
-                            shape       = shape,
-                            onClick     = {
-                                performHapticFeedback(context)
-                                overlaySource = OverlaySource.ASSISTANT_APPS
+                            selected = uiState.overlaySource == OverlaySource.ASSISTANT_APPS,
+                            shape = shape,
+                            onClick = {
                                 onOverlaySourceChange(OverlaySource.ASSISTANT_APPS)
                                 showSrcSheet = false
                             }
                         )
                         1 -> OverlaySourceOption(
-                            title       = "Custom Apps",
+                            title = "Custom Apps",
                             description = "Shows the custom list you manually picked in the main screen filter.",
-                            selected    = overlaySource == OverlaySource.CUSTOM_APPS,
-                            shape       = shape,
-                            onClick     = {
-                                performHapticFeedback(context)
-                                overlaySource = OverlaySource.CUSTOM_APPS
+                            selected = uiState.overlaySource == OverlaySource.CUSTOM_APPS,
+                            shape = shape,
+                            onClick = {
                                 onOverlaySourceChange(OverlaySource.CUSTOM_APPS)
                                 showSrcSheet = false
                             }
@@ -315,10 +242,10 @@ fun SettingsScreen(
     if (showThirdButtonSheet) {
         ModalBottomSheet(
             onDismissRequest = { showThirdButtonSheet = false },
-            sheetState       = sheetState,
-            containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
-            contentColor     = MaterialTheme.colorScheme.onSurface,
-            dragHandle       = { BottomSheetDefaults.DragHandle() },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            dragHandle = { BottomSheetDefaults.DragHandle() },
             contentWindowInsets = { WindowInsets.navigationBars }
         ) {
             Column(
@@ -328,17 +255,17 @@ fun SettingsScreen(
                     .padding(bottom = 48.dp)
             ) {
                 Text(
-                    text       = "Header Action Button",
-                    style      = MaterialTheme.typography.headlineMedium,
+                    text = "Header Action Button",
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color      = MaterialTheme.colorScheme.onSurface,
-                    modifier   = Modifier.padding(horizontal = 12.dp)
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text     = "Choose what the top-right button in the overlay header opens when tapped.",
-                    style    = MaterialTheme.typography.bodyMedium,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = "Choose what the top-right button in the overlay header opens when tapped.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
                 Spacer(Modifier.height(24.dp))
@@ -356,13 +283,11 @@ fun SettingsScreen(
                             "None" to "Disable long press."
                     }
                     OverlaySourceOption(
-                        title       = title,
+                        title = title,
                         description = description,
-                        selected    = headerButtonAction == option,
-                        shape       = shape,
-                        onClick     = {
-                            performHapticFeedback(context)
-                            headerButtonAction = option
+                        selected = uiState.headerButtonAction == option,
+                        shape = shape,
+                        onClick = {
                             onHeaderButtonActionChange(option)
                             showThirdButtonSheet = false
                         }
@@ -375,10 +300,10 @@ fun SettingsScreen(
     if (showThirdButtonLongPressSheet) {
         ModalBottomSheet(
             onDismissRequest = { showThirdButtonLongPressSheet = false },
-            sheetState       = sheetState,
-            containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
-            contentColor     = MaterialTheme.colorScheme.onSurface,
-            dragHandle       = { BottomSheetDefaults.DragHandle() },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            dragHandle = { BottomSheetDefaults.DragHandle() },
             contentWindowInsets = { WindowInsets.navigationBars }
         ) {
             Column(
@@ -388,17 +313,17 @@ fun SettingsScreen(
                     .padding(bottom = 48.dp)
             ) {
                 Text(
-                    text       = "Header Button Long Press",
-                    style      = MaterialTheme.typography.headlineMedium,
+                    text = "Header Button Long Press",
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color      = MaterialTheme.colorScheme.onSurface,
-                    modifier   = Modifier.padding(horizontal = 12.dp)
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text     = "Choose what the top-right button in the overlay header opens when long-pressed.",
-                    style    = MaterialTheme.typography.bodyMedium,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = "Choose what the top-right button in the overlay header opens when long-pressed.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
                 Spacer(Modifier.height(24.dp))
@@ -416,13 +341,11 @@ fun SettingsScreen(
                             "None" to "Disable long press on the button."
                     }
                     OverlaySourceOption(
-                        title       = title,
+                        title = title,
                         description = description,
-                        selected    = headerButtonLongPressAction == option,
-                        shape       = shape,
-                        onClick     = {
-                            performHapticFeedback(context)
-                            headerButtonLongPressAction = option
+                        selected = uiState.headerButtonLongPressAction == option,
+                        shape = shape,
+                        onClick = {
                             onHeaderButtonLongPressActionChange(option)
                             showThirdButtonLongPressSheet = false
                         }
@@ -439,9 +362,9 @@ fun SettingsScreen(
     if (showThemedSheet) {
         ModalBottomSheet(
             onDismissRequest = { showThemedSheet = false },
-            sheetState       = sheetState,
-            containerColor   = MaterialTheme.colorScheme.surfaceContainerHigh,
-            dragHandle       = { BottomSheetDefaults.DragHandle() },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            dragHandle = { BottomSheetDefaults.DragHandle() },
             contentWindowInsets = { WindowInsets.navigationBars }
         ) {
             Column(
@@ -451,27 +374,25 @@ fun SettingsScreen(
                     .padding(bottom = 48.dp)
             ) {
                 Text(
-                    text       = "Themed Icons",
-                    style      = MaterialTheme.typography.headlineMedium,
+                    text = "Themed Icons",
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    modifier   = Modifier.padding(horizontal = 12.dp)
+                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
                 Spacer(Modifier.height(24.dp))
                 GroupSurface(count = 4) { index, shape ->
                     val option = ThemedIconMode.entries[index]
                     val title = when (option) {
-                        ThemedIconMode.OFF          -> "Off"
-                        ThemedIconMode.APP_ONLY     -> "App only"
+                        ThemedIconMode.OFF -> "Off"
+                        ThemedIconMode.APP_ONLY -> "App only"
                         ThemedIconMode.OVERLAY_ONLY -> "Overlay only"
-                        ThemedIconMode.BOTH         -> "App & Overlay"
+                        ThemedIconMode.BOTH -> "App & Overlay"
                     }
                     ThemedIconOption(
-                        title    = title,
-                        selected = themedIconMode == option,
-                        shape    = shape,
-                        onClick  = {
-                            performHapticFeedback(context)
-                            themedIconMode = option
+                        title = title,
+                        selected = uiState.themedIconMode == option,
+                        shape = shape,
+                        onClick = {
                             onThemedIconModeChange(option)
                             showThemedSheet = false
                         }
@@ -485,20 +406,33 @@ fun SettingsScreen(
         rememberTopAppBarState()
     )
 
+    val activeCategory = currentCategory?.let { SettingsCategory.fromId(it) }
+    val topBarTitle = activeCategory?.let { stringResource(it.titleRes) } ?: "Settings"
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CollapsingTopAppBar(
-                title               = "Settings",
-                scrollBehavior      = scrollBehavior,
-                collapsedTitleStart = 72.dp,   // back button (16 + 40) + 16 gap
+                title = topBarTitle,
+                scrollBehavior = scrollBehavior,
+                collapsedTitleStart = 72.dp,
+                containerColor = settingsScreenBackgroundColor(),
+                scrolledContainerColor = settingsScreenBackgroundColor(),
                 navigationIcon = {
                     FilledIconButton(
-                        onClick  = onBack,
-                        shape    = CircleShape,
-                        modifier = Modifier.padding(start = 16.dp).size(40.dp),
-                        colors   = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        onClick = {
+                            if (currentCategory == null) {
+                                onBack()
+                            } else {
+                                currentCategory = null
+                            }
+                        },
+                        shape = CircleShape,
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .size(40.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = settingsTileColor()
                         )
                     ) {
                         Icon(
@@ -511,812 +445,96 @@ fun SettingsScreen(
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarState) },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = settingsScreenBackgroundColor()
     ) { pad ->
-        LazyColumn(
-            modifier            = Modifier
+        Column(
+            modifier = Modifier
                 .padding(pad)
-                .fillMaxSize(),
-            contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .fillMaxSize()
         ) {
-            // Theme section
-            item {
-                SectionLabel("Appearance")
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ThemeCard(
-                        selectedTheme = themeMode,
-                        onThemeChange = {
-                            performHapticFeedback(context)
-                            themeMode = it
-                            onThemeModeChange(it)
-                        }
+            AnimatedContent(
+                targetState = currentCategory,
+                transitionSpec = {
+                    if (targetState != null) {
+                        slideInHorizontally { width -> width } + fadeIn() togetherWith
+                                slideOutHorizontally { width -> -width / 3 } + fadeOut()
+                    } else {
+                        slideInHorizontally { width -> -width / 3 } + fadeIn() togetherWith
+                                slideOutHorizontally { width -> width } + fadeOut()
+                    }
+                },
+                label = "SettingsCategoryTransition"
+            ) { categoryId ->
+                if (categoryId == null) {
+                    SettingsMainHub(
+                        onNavigateCategory = { currentCategory = it.id }
                     )
-                    GroupSurface(count = 2) { index, shape ->
-                        when (index) {
-                            0 -> ThemedIconTile(
-                                iconColor      = Color(0xFFE91E63),
-                                themedIconMode = themedIconMode,
-                                shape          = shape,
-                                onClick        = {
-                                    showThemedSheet = true
-                                }
-                            )
-                            1 -> SettingTile(
-                                icon            = Icons.Default.TextFields,
-                                iconColor       = Color(0xFF009688),
-                                title           = "Use system font",
-                                subtitle        = "Use device's default system font instead of custom app font",
-                                checked         = useSystemFont,
-                                onCheckedChange = {
-                                    performHapticFeedback(context)
-                                    useSystemFont = it
-                                    onToggleUseSystemFont(it)
-                                },
-                                shape = shape
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Behaviour section
-            item {
-                SectionLabel("Behaviour")
-                GroupSurface(count = 3) { index, shape ->
-                    when (index) {
-                        0 -> SettingTile(
-                            icon            = Icons.AutoMirrored.Filled.Label,
-                            iconColor       = Color(0xFF4285F4),
-                            title           = "Show package names",
-                            subtitle        = "Show the app's package name below each app",
-                            checked         = showPkg,
-                            onCheckedChange = {
-                                performHapticFeedback(context)
-                                showPkg = it
-                                onToggleShowPackageName(it)
-                            },
-                            shape = shape
-                        )
-                        1 -> SettingTile(
-                            icon            = Icons.Default.Apps,
-                            iconColor       = Color(0xFF34A853),
-                            title           = "Open App",
-                            subtitle        = "Tap an app to open it instead of its voice assistant",
-                            checked         = openApp,
-                            onCheckedChange = {
-                                performHapticFeedback(context)
-                                openApp = it
-                                onToggleOpenApp(it)
-                            },
-                            shape = shape
-                        )
-                        2 -> SettingTile(
-                            icon            = Icons.AutoMirrored.Filled.ExitToApp,
-                            iconColor       = Color(0xFFEA4335),
-                            title           = "Auto close after launch",
-                            subtitle        = "Close Assistant Chooser after opening another app",
-                            checked         = closeAfter,
-                            onCheckedChange = {
-                                performHapticFeedback(context)
-                                closeAfter = it
-                                onToggleCloseAfter(it)
-                            },
-                            shape = shape
-                        )
-                    }
-                }
-            }
-
-            // Overlay section
-            item {
-                SectionLabel("Overlay")
-                GroupSurface(count = 7) { index, shape ->
-                    when (index) {
-                        0 -> OverlaySourceTile(
-                            iconColor     = Color(0xFF673AB7),
-                            overlaySource = overlaySource,
-                            shape         = shape,
-                            onClick       = {
-                                showSrcSheet = true
-                            }
-                        )
-                        1 -> HeaderButtonActionTile(
-                            iconColor          = Color(0xFF3F51B5),
-                            headerButtonAction = headerButtonAction,
-                            shape              = shape,
-                            onClick            = {
-                                showThirdButtonSheet = true
-                            }
-                        )
-                        2 -> HeaderButtonLongPressTile(
-                            iconColor          = Color(0xFF009688),
-                            headerButtonAction = headerButtonLongPressAction,
-                            shape              = shape,
-                            onClick            = {
-                                showThirdButtonLongPressSheet = true
-                            }
-                        )
-                        3 -> SettingTile(
-                            icon            = Icons.Default.SwapHoriz,
-                            iconColor       = Color(0xFF9C27B0),
-                            title           = "Show switch source button",
-                            subtitle        = "Display button in overlay to switch between Assistant & Custom Apps",
-                            checked         = showOverlaySwitch,
-                            onCheckedChange = {
-                                performHapticFeedback(context)
-                                showOverlaySwitch = it
-                                onToggleShowOverlaySwitch(it)
-                            },
-                            shape = shape
-                        )
-                        4 -> SettingTile(
-                            icon            = Icons.Default.Visibility,
-                            iconColor       = Color(0xFF00BCD4),
-                            title           = "Show app names",
-                            subtitle        = "Display app name below each icon in overlay",
-                            checked         = showAppName,
-                            onCheckedChange = {
-                                performHapticFeedback(context)
-                                showAppName = it
-                                onToggleShowAppName(it)
-                            },
-                            shape = shape
-                        )
-                        5 -> SettingTile(
-                            icon            = Icons.Default.ToggleOn,
-                            iconColor       = Color(0xFFFF9800),
-                            title           = "Tile opens Overlay",
-                            subtitle        = "Quick settings tile will open overlay instead of main app",
-                            checked         = tileOpenOverlay,
-                            onCheckedChange = {
-                                performHapticFeedback(context)
-                                tileOpenOverlay = it
-                                onToggleTileOpenOverlay(it)
-                            },
-                            shape = shape
-                        )
-                        6 -> SettingTile(
-                            icon            = Icons.Default.Swipe,
-                            iconColor       = Color(0xFFE91E63),
-                            title           = "Swipe to change list",
-                            subtitle        = "Swipe left or right in custom apps overlay to switch lists",
-                            checked         = swipeToChangeList,
-                            onCheckedChange = {
-                                performHapticFeedback(context)
-                                swipeToChangeList = it
-                                onToggleSwipeToChangeList(it)
-                            },
-                            shape = shape
-                        )
-                    }
-                }
-            }
-
-            // Backup & Restore
-            item {
-                SectionLabel("Backup & Restore")
-                GroupSurface(count = 2) { index, shape ->
-                    when (index) {
-                        0 -> ClickableTile(
-                            icon      = Icons.Default.FileUpload,
-                            iconColor = Color(0xFF2196F3),
-                            title     = "Export Settings",
-                            subtitle  = "Save your configurations to a file",
-                            onClick   = {
-                                showExportDialog = true
-                            },
-                            shape     = shape
-                        )
-                        1 -> ClickableTile(
-                            icon      = Icons.Default.FileDownload,
-                            iconColor = Color(0xFF8BC34A),
-                            title     = "Import Settings",
-                            subtitle  = "Restore configurations from a file",
-                            onClick   = {
-                                importLauncher.launch(arrayOf("*/*"))
-                            },
-                            shape     = shape
-                        )
-                    }
-                }
-            }
-
-            // About section
-            item {
-                SectionLabel("About")
-                GroupSurface(count = 5) { index, shape ->
-                    when (index) {
-                        0 -> ClickableTile(
-                            painter   = painterResource(R.drawable.ah_logo),
-                            title     = "Ayaan Hussain",
-                            subtitle  = "Developer",
-                            onClick   = {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Ayaanh001"))
-                                )
-                            },
-                            shape = shape
-                        )
-                        1 -> ClickableTile(
-                            painter   = painterResource(R.drawable.ic_github),
-                            painterContainerColor = Color.Black,
-                            title     = "GitHub",
-                            subtitle  = "Source code repository",
-                            onClick   = {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW,
-                                        Uri.parse("https://github.com/Ayaanh001/Assistant-Chooser"))
-                                )
-                            },
-                            shape = shape
-                        )
-                        2 -> ClickableTile(
-                            icon      = ImageVector.vectorResource(R.drawable.telegram),
-                            iconColor = Color(0xFF24A1DE),
-                            title     = "Telegram",
-                            subtitle  = "Community & Support",
-                            onClick   = {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/Ahacd1"))
-                                )
-                            },
-                            shape = shape
-                        )
-                        3 -> ClickableTile(
-                            icon      = Icons.Default.History,
-                            iconColor = Color(0xFFE91E63),
-                            title     = "Changelog",
-                            subtitle  = "See what's new in this version",
-                            onClick  = {
-                                showChangelog = true
-                            },
-                            shape    = shape
-                        )
-                        4 -> VersionTile(
-                            currentVersion = currentVersion,
-                            loading        = loading,
-                            shape          = shape,
-                            onCheckUpdate  = {
-                                performHapticFeedback(context)
-                                loading = true
-                                scope.launch(Dispatchers.IO) {
-                                    val latest = checkLatestVersionFromGitHub("Ayaanh001", "Assistant-Chooser")
-                                    withContext(Dispatchers.Main) {
-                                        loading = false
-                                        if (latest == null) {
-                                            snackbarState.showSnackbar("Failed to check updates")
-                                        } else {
-                                            val tag = latest.removePrefix("v")
-                                            if (isNewerVersion(tag, currentVersion)) {
-                                                val r = snackbarState.showSnackbar(
-                                                    "Update available: $tag", "Download",
-                                                    duration = SnackbarDuration.Indefinite
-                                                )
-                                                if (r == SnackbarResult.ActionPerformed) {
-                                                    context.startActivity(
-                                                        Intent(Intent.ACTION_VIEW,
-                                                            Uri.parse("https://github.com/Ayaanh001/Assistant-Chooser/releases/latest"))
-                                                    )
-                                                }
-                                            } else {
-                                                snackbarState.showSnackbar("No updates available")
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ── Section label ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text,
-        style    = MaterialTheme.typography.labelLarge,
-        color    = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, bottom = 4.dp)
-    )
-}
-
-// ── Theme Card ────────────────────────────────────────────────────────────────
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun ThemeCard(
-    selectedTheme: ThemeMode,
-    onThemeChange: (ThemeMode) -> Unit
-) {
-    Surface(
-        modifier       = Modifier.fillMaxWidth(),
-        shape          = RoundedCornerShape(24.dp),
-        color          = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 3.dp
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
-            ) {
-                Icon(
-                    Icons.Default.Palette,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = "Theme",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            val options = ThemeMode.entries
-            val count   = options.size
-
-            Row(
-                modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-            ) {
-                options.forEachIndexed { index, option ->
-                    val isSelected = selectedTheme == option
-
-                    val shapes = when {
-                        count == 1         -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                        index == 0         -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                        index == count - 1 -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                        else               -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                    }
-
-                    ToggleButton(
-                        modifier        = Modifier.weight(1f).height(44.dp),
-                        checked         = isSelected,
-                        onCheckedChange = { if (it) onThemeChange(option) },
-                        shapes          = shapes,
-                        colors          = ToggleButtonDefaults.toggleButtonColors(
-                            checkedContainerColor = MaterialTheme.colorScheme.primary,
-                            checkedContentColor   = MaterialTheme.colorScheme.onPrimary,
-                            containerColor        = MaterialTheme.colorScheme.tertiaryContainer,
-                            contentColor          = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = when (option) {
-                                ThemeMode.AUTO  -> Icons.Default.BrightnessAuto
-                                ThemeMode.LIGHT -> Icons.Default.LightMode
-                                ThemeMode.DARK  -> Icons.Default.DarkMode
-                            },
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text       = when (option) {
-                                ThemeMode.AUTO  -> "Auto"
-                                ThemeMode.LIGHT -> "Light"
-                                ThemeMode.DARK  -> "Dark"
-                            },
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize   = 13.sp,
-                            maxLines   = 1,
-                            overflow   = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ── Setting tiles ─────────────────────────────────────────────────────────────
-
-@Composable
-fun SettingTile(
-    icon: ImageVector,
-    iconColor: Color = MaterialTheme.colorScheme.primary,
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    shape: RoundedCornerShape
-) {
-    Surface(
-        modifier       = Modifier.fillMaxWidth(),
-        shape          = shape,
-        color          = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 3.dp
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier          = Modifier
-                .fillMaxWidth()
-                .clickable { onCheckedChange(!checked) }
-                .padding(16.dp)
-        ) {
-            Surface(
-                shape    = RoundedCornerShape(12.dp),
-                color    = iconColor.copy(alpha = 0.15f),
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(icon, null, tint = iconColor,
-                    modifier = Modifier.padding(8.dp))
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium,
-                    overflow = TextOverflow.Ellipsis, maxLines = 2)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    overflow = TextOverflow.Ellipsis, maxLines = 3)
-            }
-            Spacer(Modifier.width(8.dp))
-            Switch(
-                checked       = checked,
-                onCheckedChange = { onCheckedChange(it) },
-                thumbContent  = {
-                    Icon(
-                        if (checked) Icons.Filled.Check else Icons.Filled.Clear,
-                        null, Modifier.size(SwitchDefaults.IconSize)
-                    )
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun ClickableTile(
-    icon: ImageVector? = null,
-    painter: Painter? = null,
-    iconColor: Color = MaterialTheme.colorScheme.primary,
-    painterContainerColor: Color = Color.Transparent,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-    shape: RoundedCornerShape
-) {
-    Surface(
-        modifier       = Modifier.fillMaxWidth(),
-        shape          = shape,
-        color          = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 3.dp
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier          = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(16.dp)
-        ) {
-            if (icon != null || painter != null) {
-                Surface(
-                    shape    = RoundedCornerShape(12.dp),
-                    color    = if (painter != null) painterContainerColor else iconColor.copy(alpha = 0.15f),
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    if (painter != null) {
-                        Image(
-                            painter = painter,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else if (icon != null) {
-                        Icon(icon, null, tint = iconColor,
-                            modifier = Modifier.padding(8.dp))
-                    }
-                }
-                Spacer(Modifier.width(16.dp))
-            }
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium,
-                    overflow = TextOverflow.Ellipsis, maxLines = 1)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    overflow = TextOverflow.Ellipsis, maxLines = 1)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ThemedIconTile(
-    iconColor: Color = MaterialTheme.colorScheme.primary,
-    themedIconMode: ThemedIconMode,
-    shape: RoundedCornerShape,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier       = Modifier.fillMaxWidth(),
-        shape          = shape,
-        color          = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 3.dp
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier          = Modifier.fillMaxWidth().clickable { onClick() }.padding(16.dp)
-        ) {
-            Surface(
-                shape    = RoundedCornerShape(12.dp),
-                color    = iconColor.copy(alpha = 0.15f),
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(Icons.Default.AutoAwesome, null,
-                    tint     = iconColor,
-                    modifier = Modifier.padding(8.dp))
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text("Themed icons", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Apply themed icons to different parts of the app",
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest
-                ) {
-                    Text(
-                        text = when (themedIconMode) {
-                            ThemedIconMode.OFF          -> "Off"
-                            ThemedIconMode.APP_ONLY     -> "App only"
-                            ThemedIconMode.OVERLAY_ONLY -> "Overlay only"
-                            ThemedIconMode.BOTH         -> "App & Overlay"
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
-                }
-            }
-            Icon(Icons.Default.ChevronRight, null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun OverlaySourceTile(
-    iconColor: Color = MaterialTheme.colorScheme.primary,
-    overlaySource: OverlaySource,
-    shape: RoundedCornerShape,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier       = Modifier.fillMaxWidth(),
-        shape          = shape,
-        color          = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 3.dp
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier          = Modifier.fillMaxWidth().clickable { onClick() }.padding(16.dp)
-        ) {
-            Surface(
-                shape    = RoundedCornerShape(12.dp),
-                color    = iconColor.copy(alpha = 0.15f),
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(Icons.Default.GridView, null,
-                    tint     = iconColor,
-                    modifier = Modifier.padding(8.dp))
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text("App Source for Overlay", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Which apps appear when assistant is triggered",
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest
-                ) {
-                    Text(
-                        text     = if (overlaySource == OverlaySource.ASSISTANT_APPS) "Assistant Apps" else "Custom Apps",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
-                }
-            }
-            Icon(Icons.Default.ChevronRight, null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun HeaderButtonActionTile(
-    iconColor: Color = MaterialTheme.colorScheme.primary,
-    headerButtonAction: OverlayHeaderButtonAction,
-    shape: RoundedCornerShape,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier       = Modifier.fillMaxWidth(),
-        shape          = shape,
-        color          = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 3.dp
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier          = Modifier.fillMaxWidth().clickable { onClick() }.padding(16.dp)
-        ) {
-            Surface(
-                shape    = RoundedCornerShape(12.dp),
-                color    = iconColor.copy(alpha = 0.15f),
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = when (headerButtonAction) {
-                        OverlayHeaderButtonAction.APP -> Icons.AutoMirrored.Filled.OpenInNew
-                        OverlayHeaderButtonAction.SETTINGS -> Icons.Default.Settings
-                        OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS -> Icons.Default.Assistant
-                        OverlayHeaderButtonAction.NONE -> Icons.AutoMirrored.Filled.OpenInNew
-                    },
-                    contentDescription = null,
-                    tint               = iconColor,
-                    modifier           = Modifier.padding(8.dp)
-                )
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text("Header action button", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Action when top-right button in overlay is tapped",
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest
-                ) {
-                    Text(
-                        text = when (headerButtonAction) {
-                            OverlayHeaderButtonAction.APP -> "App"
-                            OverlayHeaderButtonAction.SETTINGS -> "Settings"
-                            OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS -> "Digital assistant settings"
-                            OverlayHeaderButtonAction.NONE -> "None"
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
-                }
-            }
-            Icon(Icons.Default.ChevronRight, null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun HeaderButtonLongPressTile(
-    iconColor: Color = MaterialTheme.colorScheme.primary,
-    headerButtonAction: OverlayHeaderButtonAction,
-    shape: RoundedCornerShape,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier       = Modifier.fillMaxWidth(),
-        shape          = shape,
-        color          = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 3.dp
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier          = Modifier.fillMaxWidth().clickable { onClick() }.padding(16.dp)
-        ) {
-            Surface(
-                shape    = RoundedCornerShape(12.dp),
-                color    = iconColor.copy(alpha = 0.15f),
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = when (headerButtonAction) {
-                        OverlayHeaderButtonAction.APP -> Icons.AutoMirrored.Filled.OpenInNew
-                        OverlayHeaderButtonAction.SETTINGS -> Icons.Default.Settings
-                        OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS -> Icons.Default.Assistant
-                        OverlayHeaderButtonAction.NONE -> Icons.AutoMirrored.Filled.OpenInNew
-                    },
-                    contentDescription = null,
-                    tint               = iconColor,
-                    modifier           = Modifier.padding(8.dp)
-                )
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text("Header button long press", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Action when top-right button in overlay is long-pressed",
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest
-                ) {
-                    Text(
-                        text = when (headerButtonAction) {
-                            OverlayHeaderButtonAction.APP -> "App"
-                            OverlayHeaderButtonAction.SETTINGS -> "Settings"
-                            OverlayHeaderButtonAction.DIGITAL_ASSISTANT_SETTINGS -> "Digital assistant settings"
-                            OverlayHeaderButtonAction.NONE -> "None"
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
-                }
-            }
-            Icon(Icons.Default.ChevronRight, null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun VersionTile(
-    currentVersion: String,
-    loading: Boolean,
-    shape: RoundedCornerShape,
-    onCheckUpdate: () -> Unit
-) {
-    Surface(
-        modifier       = Modifier.fillMaxWidth(),
-        shape          = shape,
-        color          = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 3.dp
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier          = Modifier.fillMaxWidth().padding(16.dp)
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text("Version", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    currentVersion,
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Button(
-                onClick        = onCheckUpdate,
-                enabled        = !loading,
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                shape          = RoundedCornerShape(20.dp),
-                colors         = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor   = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            ) {
-                if (loading) {
-                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                 } else {
-                    Icon(Icons.Default.Refresh, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Check updates")
+                    SettingsCategoryScreen(
+                        categoryId = categoryId,
+                        uiState = uiState,
+                        currentVersion = currentVersion,
+                        overlayApps = overlayApps,
+                        allApps = allApps,
+                        appLists = appLists,
+                        activeListId = activeListId,
+                        isLoadingApps = isLoadingApps,
+                        onSaveAllCustomLists = onSaveAllCustomLists,
+                        onSetActiveCustomListId = onSetActiveCustomListId,
+                        onThemeModeChange = onThemeModeChange,
+                        onOpenThemedSheet = { showThemedSheet = true },
+                        onToggleUseSystemFont = onToggleUseSystemFont,
+                        onToggleShowPackageName = onToggleShowPackageName,
+                        onToggleOpenApp = onToggleOpenApp,
+                        onToggleCloseAfter = onToggleCloseAfter,
+                        onOverlaySourceChange = onOverlaySourceChange,
+                        onOpenSourceSheet = { showSrcSheet = true },
+                        onOpenHeaderButtonSheet = { showThirdButtonSheet = true },
+                        onOpenHeaderButtonLongPressSheet = { showThirdButtonLongPressSheet = true },
+                        onToggleShowOverlaySwitch = onToggleShowOverlaySwitch,
+                        onToggleShowAppName = onToggleShowAppName,
+                        onToggleTileOpenOverlay = onToggleTileOpenOverlay,
+                        onToggleSwipeToChangeList = onToggleSwipeToChangeList,
+                        onExportClick = { showExportDialog = true },
+                        onImportClick = { importLauncher.launch(arrayOf("*/*")) },
+                        onShowChangelog = { showChangelog = true },
+                        onCheckUpdate = onCheckUpdate
+                    )
                 }
             }
         }
     }
 }
+
+// ── Main Category Hub ─────────────────────────────────────────────────────────
+
+@Composable
+private fun SettingsMainHub(
+    onNavigateCategory: (SettingsCategory) -> Unit
+) {
+    val categories = SettingsCategory.entries
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            GroupSurface(count = categories.size) { index, shape ->
+                val category = categories[index]
+                CategoryItem(
+                    title = stringResource(category.titleRes),
+                    subtitle = stringResource(category.subtitleRes),
+                    icon = category.icon,
+                    iconColor = category.iconColor,
+                    onClick = { onNavigateCategory(category) },
+                    shape = shape
+                )
+            }
+        }
+    }
+}
+
+// ── Bottom Sheet Helper Options ───────────────────────────────────────────────
 
 @Composable
 fun ThemedIconOption(
@@ -1325,27 +543,27 @@ fun ThemedIconOption(
     shape: RoundedCornerShape,
     onClick: () -> Unit
 ) {
-    val bgColor      = if (selected) MaterialTheme.colorScheme.secondaryContainer
+    val bgColor = if (selected) MaterialTheme.colorScheme.secondaryContainer
     else MaterialTheme.colorScheme.surfaceContainerLow
     val contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
     else MaterialTheme.colorScheme.onSurface
 
     Surface(
         modifier = Modifier.fillMaxWidth().height(64.dp).clip(shape).clickable(onClick = onClick),
-        color    = bgColor,
-        shape    = shape
+        color = bgColor,
+        shape = shape
     ) {
         Row(
-            modifier          = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = contentColor,)
+            Text(title, style = MaterialTheme.typography.titleMedium, color = contentColor)
             RadioButton(
                 selected = selected,
-                onClick  = onClick,
-                colors   = RadioButtonDefaults.colors(
-                    selectedColor   = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
+                onClick = onClick,
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
                     else MaterialTheme.colorScheme.primary,
                     unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1362,24 +580,27 @@ fun OverlaySourceOption(
     shape: RoundedCornerShape,
     onClick: () -> Unit
 ) {
-    val bgColor      = if (selected) MaterialTheme.colorScheme.secondaryContainer
+    val bgColor = if (selected) MaterialTheme.colorScheme.secondaryContainer
     else MaterialTheme.colorScheme.surfaceContainerLow
     val contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
     else MaterialTheme.colorScheme.onSurface
 
     Surface(
         modifier = Modifier.fillMaxWidth().clip(shape).clickable(onClick = onClick),
-        color    = bgColor,
-        shape    = shape
+        color = bgColor,
+        shape = shape
     ) {
         Row(
-            modifier          = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium,
-                    color = contentColor, fontWeight = FontWeight.SemiBold)
-                Text(description, style = MaterialTheme.typography.bodyMedium,
+                Text(
+                    title, style = MaterialTheme.typography.titleMedium,
+                    color = contentColor, fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    description, style = MaterialTheme.typography.bodyMedium,
                     color = if (selected)
                         MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f)
                     else
@@ -1389,9 +610,9 @@ fun OverlaySourceOption(
             Spacer(Modifier.width(12.dp))
             RadioButton(
                 selected = selected,
-                onClick  = onClick,
-                colors   = RadioButtonDefaults.colors(
-                    selectedColor   = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
+                onClick = onClick,
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
                     else MaterialTheme.colorScheme.primary,
                     unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )

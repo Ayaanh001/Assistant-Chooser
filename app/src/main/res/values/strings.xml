@@ -4,4 +4,16 @@
     <string name="choose_assistant">Choose Assistant App</string>
     <string name="assistant_shortcut_label">Assistant Settings</string>
     <string name="assistant_shortcut_long_label">Set as Assistant </string>
+
+    <!-- Settings Categories -->
+    <string name="settings_category_appearance_title">Appearance</string>
+    <string name="settings_category_appearance_subtitle">Theme, typography, and themed icons</string>
+    <string name="settings_category_behaviour_title">Behaviour</string>
+    <string name="settings_category_behaviour_subtitle">App launch behavior and display preferences</string>
+    <string name="settings_category_overlay_title">Overlay</string>
+    <string name="settings_category_overlay_subtitle">Overlay source, quick tile, header actions, and gestures</string>
+    <string name="settings_category_backup_title">Backup &amp; Restore</string>
+    <string name="settings_category_backup_subtitle">Export or restore your custom settings</string>
+    <string name="settings_category_about_title">About</string>
+    <string name="settings_category_about_subtitle">App version, changelog, developer, and updates</string>
 </resources>
