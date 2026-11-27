@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -69,6 +70,8 @@ import com.hussain.assistantchooser.ui.components.CollapsingTopAppBar
 import com.hussain.assistantchooser.ui.components.GroupSurface
 import com.hussain.assistantchooser.ui.components.SkeletonList
 import com.hussain.assistantchooser.ui.components.getGroupShape
+import com.hussain.assistantchooser.ui.modifiers.BlurDirection
+import com.hussain.assistantchooser.ui.modifiers.progressiveBlur
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -151,16 +154,23 @@ fun AssistantChooserScreen(
         },
         contentWindowInsets = WindowInsets.systemBars
     ) { innerPadding ->
-        Column(
+        // Height of the floating bottom area (button 56 + paddings). Content scrolls behind it.
+        val bottomBarHeight = 56.dp + 16.dp + 8.dp
+        val density = LocalDensity.current
+        val blurBandPx = with(density) { (bottomBarHeight + 56.dp).toPx() }
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(top = innerPadding.calculateTopPadding())
         ) {
             if (!isLoading && appFilterMode == AppFilterMode.CUSTOM_APPS && currentAppList.isEmpty()) {
                 // ── Empty state ──────────────────────────────────────────────
                 Box(
-                    modifier         = Modifier.weight(1f).fillMaxWidth(),
+                    modifier         = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = bottomBarHeight + innerPadding.calculateBottomPadding()),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -227,8 +237,19 @@ fun AssistantChooserScreen(
             } else {
                 // ── App list ─────────────────────────────────────────────────
                 LazyColumn(
-                    modifier            = Modifier.weight(1f),
-                    contentPadding      = PaddingValues(top = 12.dp, bottom = 4.dp),
+                    modifier            = Modifier
+                        .fillMaxSize()
+                        .progressiveBlur(
+                            maxRadius  = 20.dp,
+                            height     = blurBandPx,
+                            direction  = BlurDirection.BOTTOM
+                        ),
+                    contentPadding      = PaddingValues(
+                        start  = 16.dp,
+                        end    = 16.dp,
+                        top    = 12.dp,
+                        bottom = bottomBarHeight + innerPadding.calculateBottomPadding()
+                    ),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     if (isLoading) {
@@ -266,8 +287,6 @@ fun AssistantChooserScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             Button(
                 onClick = {
                     context.startActivity(
@@ -276,15 +295,18 @@ fun AssistantChooserScreen(
                     )
                 },
                 colors   = ButtonDefaults.filledTonalButtonColors(),
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 8.dp + innerPadding.calculateBottomPadding())
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape    = RoundedCornerShape(28.dp)
             ) {
                 Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Open Default Assistant Settings")
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 
@@ -345,7 +367,7 @@ fun AssistantChooserScreen(
             initialAppLists     = appLists,
             initialActiveListId = activeListId,
             onDismiss           = { showCustomAppPicker = false },
-            onConfirm           = { newLists, newActiveId -> 
+            onConfirm           = { newLists, newActiveId ->
                 onSaveAllLists(newLists, newActiveId)
                 onAppFilterModeChange(AppFilterMode.CUSTOM_APPS)
                 showCustomAppPicker = false
